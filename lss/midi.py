@@ -35,3 +35,12 @@ class NoteMessage(mido.Message):
     @staticmethod
     def is_note(msg):
         return hasattr(msg, "velocity") and hasattr(msg, "note")
+
+
+class ClockMessage(mido.Message):
+    type: str
+    pos: int
+
+    @staticmethod
+    def is_clock(msg):
+        return getattr(msg, "type", None) in ["clock", "songpos", "continue", "stop"]
