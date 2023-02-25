@@ -109,8 +109,10 @@ class Sequencer:
         if msg.type == 'songpos':
             self._num_clocks = 0
             # songpos is expressed in 16th notes
-            current_bar = math.floor(msg.pos / 16)
-            self._position = msg.pos - (current_bar * 16)
+            current_bar_0_indexed = math.floor(msg.pos / 16)
+            next_position_in_16ths = msg.pos - (current_bar_0_indexed * 16)
+            next_position_in_8ths = math.floor(next_position_in_16ths / 2)
+            self._position = next_position_in_8ths
         if msg.type == 'stop':
             self._num_clocks = 0
             self._running = False
