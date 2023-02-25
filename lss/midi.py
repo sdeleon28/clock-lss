@@ -30,6 +30,7 @@ class ControlMessage(mido.Message):
 class NoteMessage(mido.Message):
     velocity: int
     note: int
+    type: str
 
     @staticmethod
     def is_note(msg):
