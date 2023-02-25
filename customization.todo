@@ -1,0 +1,14 @@
+[X] On each step
+    [X] Calculate ARP index for pads under cursor
+    [X] Calculate currently active notes from input
+    [X] Calculate resulting note
+    [X] Send note
+[-] Note duration
+    [-] Make it work with hardcoded values
+    [ ] Percentage of current note length
+        [ ] Tie it to knob
+[ ] Implement variable rate
+    [ ] Make it work with fixed values
+    [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
+[ ] Sync playhead with MIDI clock
+

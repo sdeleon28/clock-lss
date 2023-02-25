@@ -18,6 +18,7 @@ class Sequencer:
         self.launchpad = launchpad
         self.launchpad.hand_shake()
         self._show_lss()
+        self._held_keys_from_host: set[int] = set()
 
         # Sequencer state and control
         self._is_stopped = True
@@ -61,6 +62,18 @@ class Sequencer:
             self._process_pad_message(msg)
             return
 
+    async def _process_host_msg(self, msg) -> None:
+        if self._debug:
+            print(f"Processing incoming HOST message: {msg}")
+
+        if ControlMessage.is_control(msg):
+            # self._process_host_control_message(msg)
+            return
+
+        if NoteMessage.is_note(msg):
+            self._process_host_note_message(msg)
+            return
+
     def _process_control_message(self, msg: ControlMessage) -> None:
         if msg.value != 127:
             return
@@ -73,10 +86,16 @@ class Sequencer:
             self.adjust_tempo(msg.control)
             return
 
-            # Last control column for muting
+        # Last control column for muting
         if (msg.control - 9) % 10 == 0:
             self._mute(msg.control)
             return
+
+    def _process_host_note_message(self, msg: NoteMessage) -> None:
+        if msg.type == 'note_on':
+            self._held_keys_from_host = self._held_keys_from_host | {msg.note}
+        elif msg.type == 'note_off':
+            self._held_keys_from_host = self._held_keys_from_host - {msg.note}
 
     def _process_pad_message(self, msg: NoteMessage) -> None:
         if msg.velocity == 0:
@@ -96,7 +115,8 @@ class Sequencer:
         """All pads in last right column are used to mute corresponding row"""
         y = int((msg - 9) / 10 - 1)
         for pad in self.launchpad.get_pads_in_row(y):
-            pad.mute()
+            if hasattr(pad, 'mute'):
+                pad.mute()
 
     def adjust_tempo(self, msg: int) -> None:
         if msg == FunctionPad.ARROW_DOWN:
@@ -107,13 +127,22 @@ class Sequencer:
     def send_message(self, note) -> None:
         """Send note to virtual MiDI device"""
         self.midi_outport.send(mido.Message("note_on", note=note))
+        time.sleep(0.1)
         self.midi_outport.send(mido.Message("note_off", note=note))
 
     def _callback(self, pad):
+        def pad_number_to_arp_index(idx):
+            arp_number_digit = str(idx)[0]
+            arp_index = int(arp_number_digit) - 1
+            return arp_index
         if pad.is_function_pad:
             return
         if not self._is_stopped:
-            self.send_message(pad.sound.value)
+            keys = sorted(list(self._held_keys_from_host))
+            index_to_pick = pad_number_to_arp_index(pad.sound.value)
+            if keys:
+                out_message = (keys * 10)[index_to_pick]
+                self.send_message(out_message)
 
     async def _process_column(self, column: int):
         pads = self.launchpad.get_pads_in_column(column)
@@ -124,6 +153,7 @@ class Sequencer:
     async def _process_signals(self) -> None:
         while self._running:
             await asyncio.gather(*[self._process_msg(m) for m in self.launchpad.get_pending_messages()])
+            await asyncio.gather(*[self._process_host_msg(m) for m in self.launchpad.get_pending_messages_from_host()])
             await asyncio.sleep(0.001)
 
     def column_iterator(self) -> Iterable[int]:
