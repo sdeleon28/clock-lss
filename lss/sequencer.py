@@ -107,17 +107,14 @@ class Sequencer:
                 self._position = (self._position + 1) % 8 if self._running else self._position
             self._running = True
         if msg.type == 'songpos':
-            # print(f'songpos={msg}')
             self._num_clocks = 0
             # songpos is expressed in 16th notes
             current_bar = math.floor(msg.pos / 16)
             self._position = msg.pos - (current_bar * 16)
         if msg.type == 'stop':
-            # print(f'stop={msg}')
             self._num_clocks = 0
             self._running = False
         if msg.type == 'continue':
-            # print(f'continue={msg}')
             self._num_clocks = 0
             self._running = True
 
