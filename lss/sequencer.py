@@ -1,10 +1,11 @@
 import asyncio
 import time
 from typing import Iterable
+import math
 
 import mido
 
-from lss.midi import ControlMessage, NoteMessage
+from lss.midi import ControlMessage, NoteMessage, ClockMessage
 from lss.utils import LSS_ASCII, FunctionPad, open_output, register_signal_handler
 
 
@@ -18,13 +19,15 @@ class Sequencer:
         self.launchpad = launchpad
         self.launchpad.hand_shake()
         self._show_lss()
+        self._held_keys_from_host: set[int] = set()
 
         # Sequencer state and control
-        self._is_stopped = True
         self._tempo = 120  # bpm
         self._running = True
         self._debug = debug
         self._position = 0
+        self._num_clocks = 0
+        self._prev_step = 0
 
     def _sig_handler(self, signum, frame):
         print("\nExiting...")
@@ -41,7 +44,9 @@ class Sequencer:
         self.launchpad.reset_all_pads()
 
     async def _sleep(self) -> None:
-        await asyncio.sleep(60 / self._tempo)
+        while self._prev_step == self._position:
+            await asyncio.sleep(0.001)
+        self._prev_step = self._position
 
     def on(self, note: int, color: int = 4) -> None:
         self.launchpad.on(note, color)
@@ -61,22 +66,60 @@ class Sequencer:
             self._process_pad_message(msg)
             return
 
-    def _process_control_message(self, msg: ControlMessage) -> None:
-        if msg.value != 127:
+    async def _process_host_msg(self, msg) -> None:
+        if self._debug:
+            print(f"Processing incoming HOST message: {msg}")
+
+        if ControlMessage.is_control(msg):
+            # self._process_host_control_message(msg)
             return
 
-        if msg.control == FunctionPad.STOP:
-            self._is_stopped = not self._is_stopped
+        if NoteMessage.is_note(msg):
+            self._process_host_note_message(msg)
+            return
+
+        if ClockMessage.is_clock(msg):
+            self._process_host_clock_message(msg)
+
+    def _process_control_message(self, msg: ControlMessage) -> None:
+        if msg.value != 127:
             return
 
         if msg.control in FunctionPad.TEMPO_PADS:
             self.adjust_tempo(msg.control)
             return
 
-            # Last control column for muting
+        # Last control column for muting
         if (msg.control - 9) % 10 == 0:
             self._mute(msg.control)
             return
+
+    def _process_host_note_message(self, msg: NoteMessage) -> None:
+        if msg.type == 'note_on':
+            self._held_keys_from_host = self._held_keys_from_host | {msg.note}
+        elif msg.type == 'note_off':
+            self._held_keys_from_host = self._held_keys_from_host - {msg.note}
+
+    def _process_host_clock_message(self, msg: ClockMessage) -> None:
+        if msg.type == 'clock':
+            self._num_clocks += 1
+            if self._num_clocks % 12 == 0:
+                self._position = (self._position + 1) % 8 if self._running else self._position
+            self._running = True
+        if msg.type == 'songpos':
+            # print(f'songpos={msg}')
+            self._num_clocks = 0
+            # songpos is expressed in 16th notes
+            current_bar = math.floor(msg.pos / 16)
+            self._position = msg.pos - (current_bar * 16)
+        if msg.type == 'stop':
+            # print(f'stop={msg}')
+            self._num_clocks = 0
+            self._running = False
+        if msg.type == 'continue':
+            # print(f'continue={msg}')
+            self._num_clocks = 0
+            self._running = True
 
     def _process_pad_message(self, msg: NoteMessage) -> None:
         if msg.velocity == 0:
@@ -86,9 +129,6 @@ class Sequencer:
         if not pad:
             return
         if pad.is_function_pad:
-            # Change play head position, make sure it's always reset
-            # to selected position
-            self._position = (pad.x - int(not self._is_stopped)) % 8
             return
         pad.click()
 
@@ -96,7 +136,8 @@ class Sequencer:
         """All pads in last right column are used to mute corresponding row"""
         y = int((msg - 9) / 10 - 1)
         for pad in self.launchpad.get_pads_in_row(y):
-            pad.mute()
+            if hasattr(pad, 'mute'):
+                pad.mute()
 
     def adjust_tempo(self, msg: int) -> None:
         if msg == FunctionPad.ARROW_DOWN:
@@ -107,13 +148,22 @@ class Sequencer:
     def send_message(self, note) -> None:
         """Send note to virtual MiDI device"""
         self.midi_outport.send(mido.Message("note_on", note=note))
+        time.sleep(0.1)
         self.midi_outport.send(mido.Message("note_off", note=note))
 
     def _callback(self, pad):
+        def pad_number_to_arp_index(idx):
+            arp_number_digit = str(idx)[0]
+            arp_index = int(arp_number_digit) - 1
+            return arp_index
         if pad.is_function_pad:
             return
-        if not self._is_stopped:
-            self.send_message(pad.sound.value)
+        if self._running:
+            keys = sorted(list(self._held_keys_from_host))
+            index_to_pick = pad_number_to_arp_index(pad.sound.value)
+            if keys:
+                out_message = (keys * 10)[index_to_pick]
+                self.send_message(out_message)
 
     async def _process_column(self, column: int):
         pads = self.launchpad.get_pads_in_column(column)
@@ -122,14 +172,14 @@ class Sequencer:
         await asyncio.gather(*[p.unblink() for p in pads])
 
     async def _process_signals(self) -> None:
-        while self._running:
+        while True:
             await asyncio.gather(*[self._process_msg(m) for m in self.launchpad.get_pending_messages()])
+            await asyncio.gather(*[self._process_host_msg(m) for m in self.launchpad.get_pending_messages_from_host()])
             await asyncio.sleep(0.001)
 
     def column_iterator(self) -> Iterable[int]:
-        while self._running:
+        while True:
             yield self._position
-            self._position = (self._position + 1) % 8 if not self._is_stopped else self._position
             time.sleep(0.001)
 
     async def run(self) -> None:

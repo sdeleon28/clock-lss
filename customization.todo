@@ -1,0 +1,23 @@
+[X] On each step
+    [X] Calculate ARP index for pads under cursor
+    [X] Calculate currently active notes from input
+    [X] Calculate resulting note
+    [X] Send note
+[-] Note duration
+    [X] Make it work with hardcoded values
+    [ ] Percentage of current note length
+        [ ] Tie it to knob
+[ ] Implement variable rate
+    [ ] Make it work with fixed values
+    [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
+[-] Sync playhead with MIDI clock
+    [X] Playing in Reaper moves cursor
+    [X] Moving cursor in Reaper moves cursor
+    [X] Playing in Reaper causes output from seq (when there are programmed notes)
+    [ ] Bug: First note doesn't play
+        [ ] Make tempo very slow
+        [ ] Print a bunch of stuff for every step
+        [ ] Figure out which of all the things being used doesn't match up
+        [ ] Fix it
+[ ] Remove ability to move cursor from launchpad
+    [ ] Adjust step indexes

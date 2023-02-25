@@ -41,9 +41,9 @@ class FunctionPad:
     Function pads, mostly top row and right column.
     """
 
-    ARROW_UP = 91
-    ARROW_DOWN = 92
-    STOP = 19
+    ARROW_UP = 104
+    ARROW_DOWN = 105
+    STOP = 107
     TEMPO_PADS = [ARROW_UP, ARROW_DOWN]
 
 
