@@ -4,11 +4,16 @@
     [X] Calculate resulting note
     [X] Send note
 [-] Note duration
-    [-] Make it work with hardcoded values
+    [X] Make it work with hardcoded values
     [ ] Percentage of current note length
         [ ] Tie it to knob
 [ ] Implement variable rate
     [ ] Make it work with fixed values
     [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
-[ ] Sync playhead with MIDI clock
-
+[-] Sync playhead with MIDI clock
+    [X] Playing in Reaper moves cursor
+    [X] Moving cursor in Reaper moves cursor
+    [X] Playing in Reaper causes output from seq (when there are programmed notes)
+    [ ] Bug: First note doesn't play
+[ ] Remove ability to move cursor from launchpad
+    [ ] Adjust step indexes
