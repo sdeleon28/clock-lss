@@ -15,5 +15,9 @@
     [X] Moving cursor in Reaper moves cursor
     [X] Playing in Reaper causes output from seq (when there are programmed notes)
     [ ] Bug: First note doesn't play
+        [ ] Make tempo very slow
+        [ ] Print a bunch of stuff for every step
+        [ ] Figure out which of all the things being used doesn't match up
+        [ ] Fix it
 [ ] Remove ability to move cursor from launchpad
     [ ] Adjust step indexes
