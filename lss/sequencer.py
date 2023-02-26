@@ -21,6 +21,7 @@ class Param:
 
 PARAMS = [
     Param('_octave_shift', 'Octave', 15, -4, 4),
+    Param('_rate', 'Rate', 14, 1, 3),
 ]
 
 def shift_octaves(notes, octaves=0):
@@ -62,6 +63,7 @@ class Sequencer:
         self._prev_step = 0
         self._queued_messages = []
         self._octave_shift = 2
+        self._rate = 2
         self._held_keys_from_host: set[int] = set()
 
         # Create virtual MiDI device where sequencer sends signals
@@ -171,9 +173,10 @@ class Sequencer:
             self._held_keys_from_host = self._held_keys_from_host - {msg.note}
 
     def _process_host_clock_message(self, msg: ClockMessage) -> None:
+        CLOCKS_PER_EIGHTH = 12
         if msg.type == 'clock':
             self._num_clocks += 1
-            if self._num_clocks % 12 == 0:
+            if self._num_clocks % (CLOCKS_PER_EIGHTH / self._rate) == 0:
                 self._position = (self._position + 1) % 8 if self._running else self._position
             self._running = True
         elif msg.type == 'songpos':
@@ -241,7 +244,10 @@ class Sequencer:
             index_to_pick = pad_number_to_arp_index(pad.sound.value)
             keys = sorted(list(self._held_keys_from_host))
             if keys:
-                out_message = (keys * 10)[index_to_pick]
+                keys_in_octaves = []
+                for octaves in range(8):
+                    keys_in_octaves += shift_octaves(keys, octaves)
+                out_message = keys_in_octaves[index_to_pick]
                 self._queue_message(out_message)
 
     def _queue_message(self, msg):

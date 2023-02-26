@@ -28,15 +28,18 @@
         [X] Connect initialisation
         [X] Connect control message update
     [X] Make it easy to attach encoders to params
-[-] Implement variable rate
-    [-] Make it work with fixed values
-    [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
+[X] Implement variable rate
+    [X] Make it work with fixed values
+    [X] Tie it to encoder
+    [ ] Make it so instead of integer values, it snaps to a list of values
+    [ ] Adjust range
 [X] Sync playhead with MIDI clock
     [X] Playing in Reaper moves cursor
     [X] Moving cursor in Reaper moves cursor
     [X] Playing in Reaper causes output from seq (when there are programmed notes)
     [X] Bug: First note doesn't play
         -> Compensating latency in reaper seems like the best option
+[X] Make arpeggiator multi octave
 [ ] Re-enable mute
 [ ] Remove ability to move cursor from launchpad
     [ ] Adjust step indexes
@@ -55,7 +58,7 @@
     [ ] Only relevant to selected channel
     [ ] Controls
         [ ] Gate
-        [ ] Rate
+        [X] Rate
         [ ] Straight / triplet
         [X] +- octave
         [ ] Scale
