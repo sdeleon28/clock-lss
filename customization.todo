@@ -40,8 +40,8 @@
         -> Compensating latency in reaper seems like the best option
 [X] Make arpeggiator multi octave
 [ ] Re-enable mute
-[ ] Remove ability to move cursor from launchpad
-    [ ] Adjust step indexes
+[X] Remove ability to move cursor from launchpad
+    [X] Adjust step indexes
 [ ] Option to play a column's notes in quick arpeggiated succession vs a the same time
 [ ] Document latency necessary for first notes to be grabbed
 [ ] Refactor to make state independent of UI

@@ -25,7 +25,7 @@ class Pad:
     11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 || 19
     """
 
-    def __init__(self, x: int, y: int, launchpad, is_function_pad: bool = False):
+    def __init__(self, x: int, y: int, launchpad):
         assert 0 <= x < 9, f"x has to be between 0 and 9, got {x}"
         assert 0 <= y < 9, f"y has to be between 0 and 9, got {y}"
 
@@ -35,7 +35,6 @@ class Pad:
         self._is_on = False
         self._muted = False
         self.sound = MiDIDrums.get_sound(self.y)
-        self.is_function_pad = is_function_pad
 
     def __repr__(self):
         return f"Pad({self.x}, {self.y}, note={self.note})"
@@ -75,8 +74,6 @@ class Pad:
         self._set_active_color()
 
     def click(self) -> None:
-        if self.is_function_pad:
-            return
         self._is_on = not self._is_on
         self._set_active_color()
 

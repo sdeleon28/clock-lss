@@ -43,8 +43,6 @@ class FunctionPad:
 
     ARROW_UP = 104
     ARROW_DOWN = 105
-    STOP = 107
-    TEMPO_PADS = [ARROW_UP, ARROW_DOWN]
 
 
 LSS_ASCII = r"""

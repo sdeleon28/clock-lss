@@ -55,7 +55,6 @@ def snap(number, array):
 class Sequencer:
     def __init__(self, launchpad, debug: bool = False):
         # Sequencer state and control
-        self._tempo = 120  # bpm
         self._running = True
         self._debug = debug
         self._position = 0
@@ -158,10 +157,6 @@ class Sequencer:
         if msg.value != 127:
             return
 
-        if msg.control in FunctionPad.TEMPO_PADS:
-            self.adjust_tempo(msg.control)
-            return
-
         # Last control column for muting
         if (msg.control - 9) % 10 == 0:
             self._mute(msg.control)
@@ -202,8 +197,6 @@ class Sequencer:
         pad = self.launchpad.get_pad(msg.note)
         if not pad:
             return
-        if pad.is_function_pad:
-            return
         pad.click()
 
     def _mute(self, msg: int) -> None:
@@ -212,12 +205,6 @@ class Sequencer:
         for pad in self.launchpad.get_pads_in_row(y):
             if hasattr(pad, 'mute'):
                 pad.mute()
-
-    def adjust_tempo(self, msg: int) -> None:
-        if msg == FunctionPad.ARROW_DOWN:
-            self._tempo -= 5
-        elif msg == FunctionPad.ARROW_UP:
-            self._tempo += 5
 
     def send_note(self, note, length=0.1) -> None:
         """Send note to virtual MiDI device"""
@@ -235,11 +222,9 @@ class Sequencer:
 
     def _callback(self, pad):
         def pad_number_to_arp_index(pad_number):
-            vertical_notes = [43, 49, 44, 42, 39, 38, 36]
+            vertical_notes = [51, 43, 49, 44, 42, 39, 38, 36]
             arp_index = vertical_notes.index(pad_number) if pad_number in vertical_notes else 0
             return arp_index
-        if pad.is_function_pad:
-            return
         if self._running:
             index_to_pick = pad_number_to_arp_index(pad.sound.value)
             keys = sorted(list(self._held_keys_from_host))

@@ -39,8 +39,7 @@ class BaseLaunchpad:
         self.pads = {}
         for x in range(self.column_count):
             for y in range(self.row_count):
-                is_function_pad = y == 0
-                pad = Pad(x, y, launchpad=self, is_function_pad=is_function_pad)
+                pad = Pad(x, y, launchpad=self)
                 pad.off()
                 self.pads[pad.note] = pad
 
