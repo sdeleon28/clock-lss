@@ -147,11 +147,19 @@ class Sequencer:
         elif msg == FunctionPad.ARROW_UP:
             self._tempo += 5
 
-    def send_message(self, note) -> None:
+    def send_note(self, note, length=0.1) -> None:
         """Send note to virtual MiDI device"""
         self.midi_outport.send(mido.Message("note_on", note=note))
-        time.sleep(0.1)
+        time.sleep(length)
         self.midi_outport.send(mido.Message("note_off", note=note))
+
+    def send_notes(self, notes, length=0.1) -> None:
+        """Send note to virtual MiDI device"""
+        for note in notes:
+            self.midi_outport.send(mido.Message("note_on", note=note))
+        time.sleep(length)
+        for note in notes:
+            self.midi_outport.send(mido.Message("note_off", note=note))
 
     def _callback(self, pad):
         def pad_number_to_arp_index(pad_number):
@@ -171,8 +179,16 @@ class Sequencer:
         self._queued_messages.append(msg)
 
     async def _send_queued_messages(self):
-        for message in self._queued_messages:
-            self.send_message(message)
+        quick_arpeggio_mode = False
+        if quick_arpeggio_mode:
+            # TODO: Calculate note length
+            note_length = 0.1
+            for message in self._queued_messages:
+                self.send_note(message, note_length)
+        else:
+            # TODO: Calculate chord length
+            chord_length = 0.1
+            self.send_notes(self._queued_messages, chord_length)
         self._queued_messages = []
 
     async def _process_column(self, column: int):

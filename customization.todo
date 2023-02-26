@@ -8,13 +8,14 @@
     [ ] Grab control messages from twister encoder
         [ ] Gate control
 [-] Vertical step
-    [ ] Quick arpeggio
-        [ ] Similar to my current approach
-        [ ] But calculate the time between notes so that they take exactly the same time
+    [-] Quick arpeggio mode
+        [ ] Calculate the time between notes so that they take exactly the same time
     [-] Simultaneous
         [X] Refactor so that the code that processes pads and the code that sends messages is separate
-        [ ] Make it work based on a variable
+        [X] Make it work based on a variable
         [ ] Assign toggle to variable
+    [ ] Enhancement
+        [ ] Make it so we don't use sleeps but schedule events for other ticks
 [ ] Implement variable rate
     [ ] Make it work with fixed values
     [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
