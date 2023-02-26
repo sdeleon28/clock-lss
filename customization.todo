@@ -5,19 +5,33 @@
     [X] Send note
 [-] Note duration
     [X] Make it work with hardcoded values
-    [ ] Percentage of current note length
-        [ ] Tie it to knob
+    [ ] Grab control messages from twister encoder
+        [ ] Gate control
 [ ] Implement variable rate
     [ ] Make it work with fixed values
     [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
-[-] Sync playhead with MIDI clock
+[X] Sync playhead with MIDI clock
     [X] Playing in Reaper moves cursor
     [X] Moving cursor in Reaper moves cursor
     [X] Playing in Reaper causes output from seq (when there are programmed notes)
-    [ ] Bug: First note doesn't play
-        [ ] Make tempo very slow
-        [ ] Print a bunch of stuff for every step
-        [ ] Figure out which of all the things being used doesn't match up
-        [ ] Fix it
+    [X] Bug: First note doesn't play
+        -> Compensating latency in reaper seems like the best option
 [ ] Remove ability to move cursor from launchpad
     [ ] Adjust step indexes
+[ ] Option to play a column's notes in quick arpeggiated succession vs a the same time
+[ ] Document latency necessary for first notes to be grabbed
+[ ] Refactor to make state independent of UI
+    [ ] Make UI a function of state and not viceversa
+    [ ] This gives me more memory host more things than the UI can hold
+[ ] Change channels with arrow keys
+    [ ] Each channel holds its own running sequencer
+    [ ] Next / prev arrows
+    [ ] Pressing both arrows allows for bird's eye channel control
+        [ ] Select channel
+        [ ] Mute channel
+[ ] Twister is context sensitive
+    [ ] Only relevant to selected channel
+    [ ] Controls
+        [ ] Gate
+        [ ] Rate
+        [ ] Straight / triplet
