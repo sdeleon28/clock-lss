@@ -39,9 +39,21 @@
     [X] Bug: First note doesn't play
         -> Compensating latency in reaper seems like the best option
 [X] Make arpeggiator multi octave
-[ ] Re-enable mute
 [X] Remove ability to move cursor from launchpad
     [X] Adjust step indexes
+[ ] Refactor so that data and UI are separate
+    -> This will allow for a richer storage format and more memory
+[ ] Allow for multi-channel mode
+[ ] Special mode
+    [ ] Song master mode copies all pages of first sequencer to all channels
+    [ ] Channel master mode copies first page of active seq to all pages in the same seq
+    [ ] Mute mode allows to mute notes and keep them visible
+    [ ] Legato mode
+        [ ] Selected notes become open notes
+        [ ] They close when they get to the next one
+    [ ] Playhead modes
+        [ ] Follow clock
+        [ ] Still (show moving cursor when it's on this page)
 [ ] Option to play a column's notes in quick arpeggiated succession vs a the same time
 [ ] Document latency necessary for first notes to be grabbed
 [ ] Refactor to make state independent of UI
@@ -62,9 +74,11 @@
         [X] +- octave
         [ ] Scale
 [ ] Receive harmony and drumkit on different channels
+    [ ] Drumkit channel could be smart enough to always have all the notes on
 [ ] Copy / paste channel state
 [ ] Advanced Sensitivity
     [ ] Do this if the launchpad allows to control light intensity (probabably does)
     [ ] Detect velocity on pad press, record it as part of the stored value
     [ ] When displaying, use the recorded velocity as intensity
 [ ] Save / load state to / from file
+[ ] Read mode
