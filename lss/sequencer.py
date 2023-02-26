@@ -28,6 +28,7 @@ class Sequencer:
         self._position = 0
         self._num_clocks = 0
         self._prev_step = 0
+        self._queued_messages = []
 
     def _sig_handler(self, signum, frame):
         print("\nExiting...")
@@ -154,7 +155,6 @@ class Sequencer:
 
     def _callback(self, pad):
         def pad_number_to_arp_index(pad_number):
-            print(f'pad_number={pad_number}')
             vertical_notes = [43, 49, 44, 42, 39, 38, 36]
             arp_index = vertical_notes.index(pad_number) if pad_number in vertical_notes else 0
             return arp_index
@@ -165,11 +165,20 @@ class Sequencer:
             keys = sorted(list(self._held_keys_from_host))
             if keys:
                 out_message = (keys * 10)[index_to_pick]
-                self.send_message(out_message)
+                self._queue_message(out_message)
+
+    def _queue_message(self, msg):
+        self._queued_messages.append(msg)
+
+    async def _send_queued_messages(self):
+        for message in self._queued_messages:
+            self.send_message(message)
+        self._queued_messages = []
 
     async def _process_column(self, column: int):
         pads = self.launchpad.get_pads_in_column(column)
         await asyncio.gather(*[p.process_pad(self._callback) for p in pads])
+        await self._send_queued_messages()
         await self._sleep()
         await asyncio.gather(*[p.unblink() for p in pads])
 
