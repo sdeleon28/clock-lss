@@ -106,19 +106,21 @@ class Sequencer:
             if self._num_clocks % 12 == 0:
                 self._position = (self._position + 1) % 8 if self._running else self._position
             self._running = True
-        if msg.type == 'songpos':
+        elif msg.type == 'songpos':
             self._num_clocks = 0
             # songpos is expressed in 16th notes
             current_bar_0_indexed = math.floor(msg.pos / 16)
             next_position_in_16ths = msg.pos - (current_bar_0_indexed * 16)
             next_position_in_8ths = math.floor(next_position_in_16ths / 2)
             self._position = next_position_in_8ths
-        if msg.type == 'stop':
+        elif msg.type == 'stop':
             self._num_clocks = 0
             self._running = False
-        if msg.type == 'continue':
+        elif msg.type == 'continue':
             self._num_clocks = 0
             self._running = True
+        elif self._debug:
+            print(f'We don''t know about this clock message type: {msg}')
 
     def _process_pad_message(self, msg: NoteMessage) -> None:
         if msg.velocity == 0:
@@ -151,15 +153,16 @@ class Sequencer:
         self.midi_outport.send(mido.Message("note_off", note=note))
 
     def _callback(self, pad):
-        def pad_number_to_arp_index(idx):
-            arp_number_digit = str(idx)[0]
-            arp_index = int(arp_number_digit) - 1
+        def pad_number_to_arp_index(pad_number):
+            print(f'pad_number={pad_number}')
+            vertical_notes = [43, 49, 44, 42, 39, 38, 36]
+            arp_index = vertical_notes.index(pad_number) if pad_number in vertical_notes else 0
             return arp_index
         if pad.is_function_pad:
             return
         if self._running:
-            keys = sorted(list(self._held_keys_from_host))
             index_to_pick = pad_number_to_arp_index(pad.sound.value)
+            keys = sorted(list(self._held_keys_from_host))
             if keys:
                 out_message = (keys * 10)[index_to_pick]
                 self.send_message(out_message)
