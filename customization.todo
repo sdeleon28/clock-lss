@@ -16,18 +16,20 @@
         [ ] Assign toggle to variable
     [ ] Enhancement
         [ ] Make it so we don't use sleeps but schedule events for other ticks
-[-] Octave shift
-    [X] Make it work with a variable
-[-] Encoders
+[X] Octave shift
+[X] Encoders
     [X] Detect encoder messages
     [X] Encoder 4 sends encoder 5's control message, WTF?
         [X] Reset to factory defaults
     [X] Tie single encoder to octave control
-    [ ] Generalize ability to tie encoders to variables
-        [ ] Give it variable min and max values, turn 0-255 into 0-1, then find the value in the range
-    [ ] Write a method where we can easily attach encoders to params
-[ ] Implement variable rate
-    [ ] Make it work with fixed values
+    [X] Initialize encoder to correct value
+    [X] Generalize ability to tie encoders to variables
+        [X] Create data structure
+        [X] Connect initialisation
+        [X] Connect control message update
+    [X] Make it easy to attach encoders to params
+[-] Implement variable rate
+    [-] Make it work with fixed values
     [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
 [X] Sync playhead with MIDI clock
     [X] Playing in Reaper moves cursor
@@ -35,6 +37,7 @@
     [X] Playing in Reaper causes output from seq (when there are programmed notes)
     [X] Bug: First note doesn't play
         -> Compensating latency in reaper seems like the best option
+[ ] Re-enable mute
 [ ] Remove ability to move cursor from launchpad
     [ ] Adjust step indexes
 [ ] Option to play a column's notes in quick arpeggiated succession vs a the same time
@@ -54,7 +57,7 @@
         [ ] Gate
         [ ] Rate
         [ ] Straight / triplet
-        [ ] +- octave
+        [X] +- octave
         [ ] Scale
 [ ] Receive harmony and drumkit on different channels
 [ ] Copy / paste channel state
@@ -62,3 +65,4 @@
     [ ] Do this if the launchpad allows to control light intensity (probabably does)
     [ ] Detect velocity on pad press, record it as part of the stored value
     [ ] When displaying, use the recorded velocity as intensity
+[ ] Save / load state to / from file

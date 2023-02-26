@@ -8,6 +8,21 @@ import mido
 from lss.midi import ControlMessage, NoteMessage, ClockMessage
 from lss.utils import LSS_ASCII, FunctionPad, open_output, register_signal_handler
 
+OCTAVE_CONTROL = 15
+OCTAVE_MIN, OCTAVE_MAX = -4, 4
+
+class Param:
+    def __init__(self, attribute_name, name, control, min_value, max_value):
+        self.attribute_name = attribute_name
+        self.name = name
+        self.control = control
+        self.min_value = min_value
+        self.max_value = max_value
+
+PARAMS = [
+    Param('_octave_shift', 'Octave', 15, -4, 4),
+]
+
 def shift_octaves(notes, octaves=0):
     return [note + 12 * octaves for note in notes]
 
@@ -26,6 +41,11 @@ def get_value_from_proportion(proportion, min_val, max_val):
         raise ValueError("Proportion must be between 0 and 1")
     return min_val + (max_val - min_val) * proportion
 
+def get_proportion_from_value(value, min_val, max_val):
+    if value < min_val or value > max_val:
+        raise ValueError("Value must be between {} and {}".format(min_val, max_val))
+    return (value - min_val) / (max_val - min_val)
+
 def snap(number, array):
     closest_index = min(range(len(array)), key=lambda i: abs(array[i] - number))
     closest_value = array[closest_index]
@@ -33,16 +53,6 @@ def snap(number, array):
 
 class Sequencer:
     def __init__(self, launchpad, debug: bool = False):
-        # Create virtual MiDI device where sequencer sends signals
-        self.midi_outport = open_output("Launchpad Step Sequencer", virtual=True, autoreset=True)
-        register_signal_handler(self._sig_handler)
-
-        # Setup launchpad
-        self.launchpad = launchpad
-        self.launchpad.hand_shake()
-        self._show_lss()
-        self._held_keys_from_host: set[int] = set()
-
         # Sequencer state and control
         self._tempo = 120  # bpm
         self._running = True
@@ -51,7 +61,30 @@ class Sequencer:
         self._num_clocks = 0
         self._prev_step = 0
         self._queued_messages = []
-        self._octave_shift = -2
+        self._octave_shift = 2
+        self._held_keys_from_host: set[int] = set()
+
+        # Create virtual MiDI device where sequencer sends signals
+        self.midi_outport = open_output("Launchpad Step Sequencer", virtual=True, autoreset=True)
+        register_signal_handler(self._sig_handler)
+
+        # Setup launchpad
+        self.launchpad = launchpad
+        self.launchpad.hand_shake()
+        self._show_lss()
+        self._init_controller_params()
+
+    def _init_controller_params(self):
+        for param in PARAMS:
+            self.launchpad.init_controller_param(param.control,
+                                                 int(
+                                                     get_value_from_proportion(
+                                                         get_proportion_from_value(
+                                                             getattr(self, param.attribute_name),
+                                                             param.min_value,
+                                                             param.max_value),
+                                                         0,
+                                                         127)))
 
     def _sig_handler(self, signum, frame):
         print("\nExiting...")
@@ -109,18 +142,14 @@ class Sequencer:
         if self._debug:
             print(f"Processing incoming CONTROLLER message: {msg}")
 
-        print(f"Processing incoming CONTROLLER message: {msg}")
-
         if ControlMessage.is_control(msg):
-            # self._process_controller_message(msg)
-            OCTAVE_CONTROL = 15
-            if msg.control == OCTAVE_CONTROL:
-                encoder_byte = msg.value
-                proportion = control_message_to_proportion(encoder_byte)
-                min_octaves, max_octaves = -3, 3
-                octave_value = get_value_from_proportion(proportion, min_octaves, max_octaves)
-                _snapped_octave_index, snapped_octave_value = snap(octave_value, range(min_octaves, max_octaves + 1))
-                self._octave_shift = snapped_octave_value
+            if msg.control in map(lambda p: p.control, PARAMS):
+                param = list(filter(lambda p: p.control == msg.control, PARAMS))[0]
+                octave_value = get_value_from_proportion(control_message_to_proportion(msg.value),
+                                                               param.min_value,
+                                                               param.max_value)
+                _snapped_octave_index, snapped_octave_value = snap(octave_value, range(param.min_value, param.max_value + 1))
+                setattr(self, param.attribute_name, snapped_octave_value)
 
     def _process_control_message(self, msg: ControlMessage) -> None:
         if msg.value != 127:
@@ -220,6 +249,7 @@ class Sequencer:
 
     async def _send_queued_messages(self):
         messages = shift_octaves(self._queued_messages, self._octave_shift)
+        messages = list(filter(lambda m: m >=0 and m < 128, messages))
         quick_arpeggio_mode = False
         if quick_arpeggio_mode:
             # TODO: Calculate note length

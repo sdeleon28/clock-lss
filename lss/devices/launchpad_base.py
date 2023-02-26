@@ -15,6 +15,7 @@ class BaseLaunchpad:
 
     def __init__(self):
         self._outport = open_output(self.name, autoreset=True)
+        self._controller_outport = open_output('Midi Fighter Twister', autoreset=True)
         self._inport = open_input(self.name, autoreset=True)
         self._host_inport = open_input(self.name + " Virtual Input", virtual=True, autoreset=True)
         # TODO: This has nothing to do with the launchpad, move it to a different class
@@ -30,6 +31,9 @@ class BaseLaunchpad:
         self._outport.close()
         self._host_inport.close()
         self._controller_inport.close()
+
+    def init_controller_param(self, control: int, value: int):
+        self._controller_outport.send(mido.Message('control_change', control=control, value=value))
 
     def reset_all_pads(self) -> None:
         self.pads = {}
