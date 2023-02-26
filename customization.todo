@@ -17,10 +17,15 @@
     [ ] Enhancement
         [ ] Make it so we don't use sleeps but schedule events for other ticks
 [-] Octave shift
-    [-] Make it work with a variable
-    [ ] Disable twister in Reaper
-    [ ] Tie it to a twister encoder
-        [ ] Detect encoder input
+    [X] Make it work with a variable
+[-] Encoders
+    [X] Detect encoder messages
+    [X] Encoder 4 sends encoder 5's control message, WTF?
+        [X] Reset to factory defaults
+    [X] Tie single encoder to octave control
+    [ ] Generalize ability to tie encoders to variables
+        [ ] Give it variable min and max values, turn 0-255 into 0-1, then find the value in the range
+    [ ] Write a method where we can easily attach encoders to params
 [ ] Implement variable rate
     [ ] Make it work with fixed values
     [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
@@ -52,3 +57,8 @@
         [ ] +- octave
         [ ] Scale
 [ ] Receive harmony and drumkit on different channels
+[ ] Copy / paste channel state
+[ ] Advanced Sensitivity
+    [ ] Do this if the launchpad allows to control light intensity (probabably does)
+    [ ] Detect velocity on pad press, record it as part of the stored value
+    [ ] When displaying, use the recorded velocity as intensity

@@ -17,6 +17,8 @@ class BaseLaunchpad:
         self._outport = open_output(self.name, autoreset=True)
         self._inport = open_input(self.name, autoreset=True)
         self._host_inport = open_input(self.name + " Virtual Input", virtual=True, autoreset=True)
+        # TODO: This has nothing to do with the launchpad, move it to a different class
+        self._controller_inport = open_input('Midi Fighter Twister', autoreset=True)
         self.reset_all_pads()
 
     def hand_shake(self):
@@ -27,6 +29,7 @@ class BaseLaunchpad:
         self._inport.close()
         self._outport.close()
         self._host_inport.close()
+        self._controller_inport.close()
 
     def reset_all_pads(self) -> None:
         self.pads = {}
@@ -61,3 +64,6 @@ class BaseLaunchpad:
 
     def get_pending_messages_from_host(self):
         return self._host_inport.iter_pending()
+
+    def get_pending_controller_messages(self):
+        return self._controller_inport.iter_pending()

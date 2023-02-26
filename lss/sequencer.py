@@ -11,6 +11,26 @@ from lss.utils import LSS_ASCII, FunctionPad, open_output, register_signal_handl
 def shift_octaves(notes, octaves=0):
     return [note + 12 * octaves for note in notes]
 
+def clip_to_range(n, min_val, max_val):
+    return max(min_val, min(n, max_val))
+
+def control_message_to_proportion(num):
+    max_control = 127
+    if num < 0 or num > max_control:
+        raise ValueError("Input must be between 0 and 255")
+    res = round(num/float(max_control) * 1.1, 2)
+    return clip_to_range(res, 0, 1)
+
+def get_value_from_proportion(proportion, min_val, max_val):
+    if proportion < 0 or proportion > 1:
+        raise ValueError("Proportion must be between 0 and 1")
+    return min_val + (max_val - min_val) * proportion
+
+def snap(number, array):
+    closest_index = min(range(len(array)), key=lambda i: abs(array[i] - number))
+    closest_value = array[closest_index]
+    return closest_index, closest_value
+
 class Sequencer:
     def __init__(self, launchpad, debug: bool = False):
         # Create virtual MiDI device where sequencer sends signals
@@ -84,6 +104,23 @@ class Sequencer:
 
         if ClockMessage.is_clock(msg):
             self._process_host_clock_message(msg)
+
+    async def _process_controller_message(self, msg) -> None:
+        if self._debug:
+            print(f"Processing incoming CONTROLLER message: {msg}")
+
+        print(f"Processing incoming CONTROLLER message: {msg}")
+
+        if ControlMessage.is_control(msg):
+            # self._process_controller_message(msg)
+            OCTAVE_CONTROL = 15
+            if msg.control == OCTAVE_CONTROL:
+                encoder_byte = msg.value
+                proportion = control_message_to_proportion(encoder_byte)
+                min_octaves, max_octaves = -3, 3
+                octave_value = get_value_from_proportion(proportion, min_octaves, max_octaves)
+                _snapped_octave_index, snapped_octave_value = snap(octave_value, range(min_octaves, max_octaves + 1))
+                self._octave_shift = snapped_octave_value
 
     def _process_control_message(self, msg: ControlMessage) -> None:
         if msg.value != 127:
@@ -206,6 +243,7 @@ class Sequencer:
         while True:
             await asyncio.gather(*[self._process_msg(m) for m in self.launchpad.get_pending_messages()])
             await asyncio.gather(*[self._process_host_msg(m) for m in self.launchpad.get_pending_messages_from_host()])
+            await asyncio.gather(*[self._process_controller_message(m) for m in self.launchpad.get_pending_controller_messages()])
             await asyncio.sleep(0.001)
 
     def column_iterator(self) -> Iterable[int]:
