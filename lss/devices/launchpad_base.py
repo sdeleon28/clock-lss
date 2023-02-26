@@ -3,8 +3,8 @@ from typing import Dict, List
 import mido
 
 from lss.pad import Pad
-from lss.utils import open_input, open_output
-
+from lss.utils import open_input, open_output, Color
+from ..page import Page
 
 class BaseLaunchpad:
     row_count: int
@@ -42,6 +42,36 @@ class BaseLaunchpad:
                 pad = Pad(x, y, launchpad=self)
                 pad.off()
                 self.pads[pad.note] = pad
+
+    # TODO: This should be a DTO
+    def set_page(self, page: Page):
+        notes_on = len(list(filter(lambda x: x.is_on, page.note_map.values())))
+        page_column_count, page_row_count = 8, 8
+        for x in range(page_column_count):
+            for y in range(page_row_count):
+                pad_data = page.pads[x][y]
+                pad = Pad(x, y, launchpad=self)
+                if pad_data.is_on:
+                    self.on(pad_data.note, Color.GREEN)
+                    pad.on()
+                else:
+                    self.off(pad_data.note)
+                    pad.off()
+                self.pads[pad_data.note] = pad
+
+    def blink_pads(self, pads):
+        for pad_number in pads:
+            pad = self.pads.get(pad_number)
+            if pad and not pad._is_on:
+                pad.on()
+                self.on(pad_number, Color.PINK)
+
+    def unblink_pads(self, pads):
+        for pad_number in pads:
+            pad = self.pads.get(pad_number)
+            if pad and not pad._is_on:
+                pad.off()
+                self.off(pad_number)
 
     def get_pad(self, note: int) -> "Pad":
         return self.pads.get(note)

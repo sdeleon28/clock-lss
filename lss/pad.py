@@ -47,37 +47,8 @@ class Pad:
     def note(self) -> int:
         return self.get_note(self.x, self.y)
 
-    def on(self, color: int) -> None:
-        self._launchpad.on(self.note, color)
+    def on(self) -> None:
+        self._is_on = True
 
     def off(self) -> None:
-        self._launchpad.off(self.note)
-
-    def _set_active_color(self) -> None:
-        if self._is_on:
-            if self._muted:
-                self.on(Color.GREEN_DIMMED)
-            else:
-                self.on(Color.GREEN)
-        else:
-            self._launchpad.off(self.note)
-
-    def blink(self) -> None:
-        if not self._is_on:
-            self.on(Color.PINK)
-
-    async def unblink(self) -> None:
-        self._set_active_color()
-
-    def mute(self) -> None:
-        self._muted = not self._muted
-        self._set_active_color()
-
-    def click(self) -> None:
-        self._is_on = not self._is_on
-        self._set_active_color()
-
-    async def process_pad(self, callback) -> None:
-        self.blink()
-        if self._is_on and not self._muted:
-            callback(self)
+        self._is_on = False

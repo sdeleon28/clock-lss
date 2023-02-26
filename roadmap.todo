@@ -41,8 +41,13 @@
 [X] Make arpeggiator multi octave
 [X] Remove ability to move cursor from launchpad
     [X] Adjust step indexes
-[ ] Refactor so that data and UI are separate
+[X] Refactor so that data and UI are separate
     -> This will allow for a richer storage format and more memory
+[-] Pages
+    [X] Make it work with a single hardcoded page
+    [ ] Detect page control messages
+    [ ] Change pages by pressing buttons
+    [ ] Make playhead smart enough to scroll through pages
 [ ] Allow for multi-channel mode
 [ ] Special mode
     [ ] Song master mode copies all pages of first sequencer to all channels

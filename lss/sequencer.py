@@ -6,7 +6,8 @@ import math
 import mido
 
 from lss.midi import ControlMessage, NoteMessage, ClockMessage
-from lss.utils import LSS_ASCII, FunctionPad, open_output, register_signal_handler
+from lss.utils import LSS_ASCII, open_output, register_signal_handler
+from .page import Page
 
 CLOCKS_PER_EIGHTH = 12
 
@@ -52,7 +53,7 @@ def snap(number, array):
     closest_value = array[closest_index]
     return closest_index, closest_value
 
-class Sequencer:
+class Sequencer(Page.Listener):
     def __init__(self, launchpad, debug: bool = False):
         # Sequencer state and control
         self._running = True
@@ -76,6 +77,14 @@ class Sequencer:
         self._show_lss()
         self._init_controller_params()
 
+        self.page0 = Page(0, 0)
+        self.page0.add_listener(self)
+
+        self.launchpad.set_page(self.page0)
+
+    def on_page_updated(self, page: Page):
+        self.launchpad.set_page(page)
+
     def _init_controller_params(self):
         for param in PARAMS:
             self.launchpad.init_controller_param(param.control,
@@ -90,6 +99,7 @@ class Sequencer:
 
     def _sig_handler(self, signum, frame):
         print("\nExiting...")
+        self.page0.remove_listener(self)
         self.launchpad.close()
         self._running = False
         self.midi_outport.close()
@@ -97,8 +107,7 @@ class Sequencer:
     def _show_lss(self) -> None:
         """Show LSS when starting sequencer"""
         pads = [61, 51, 41, 31, 32, 65, 54, 45, 34, 68, 57, 48, 37]
-        for pad in pads:
-            self.launchpad.get_pad(pad).blink()
+        self.launchpad.blink_pads(pads)
         time.sleep(1.5)
         self.launchpad.reset_all_pads()
 
@@ -106,12 +115,6 @@ class Sequencer:
         while self._prev_step == self._position:
             await asyncio.sleep(0.001)
         self._prev_step = self._position
-
-    def on(self, note: int, color: int = 4) -> None:
-        self.launchpad.on(note, color)
-
-    def off(self, note: int) -> None:
-        self.launchpad.off(note)
 
     async def _process_msg(self, msg) -> None:
         if self._debug:
@@ -193,11 +196,7 @@ class Sequencer:
     def _process_pad_message(self, msg: NoteMessage) -> None:
         if msg.velocity == 0:
             return
-
-        pad = self.launchpad.get_pad(msg.note)
-        if not pad:
-            return
-        pad.click()
+        self.page0.toggle_pad_by_note(msg.note)
 
     def _mute(self, msg: int) -> None:
         """All pads in last right column are used to mute corresponding row"""
@@ -220,13 +219,13 @@ class Sequencer:
         for note in notes:
             self.midi_outport.send(mido.Message("note_off", note=note))
 
-    def _callback(self, pad):
+    async def _callback(self, pad_number):
         def pad_number_to_arp_index(pad_number):
             vertical_notes = [51, 43, 49, 44, 42, 39, 38, 36]
             arp_index = vertical_notes.index(pad_number) if pad_number in vertical_notes else 0
             return arp_index
-        if self._running:
-            index_to_pick = pad_number_to_arp_index(pad.sound.value)
+        if self._running and pad_number != None:
+            index_to_pick = pad_number_to_arp_index(pad_number)
             keys = sorted(list(self._held_keys_from_host))
             if keys:
                 keys_in_octaves = []
@@ -252,11 +251,15 @@ class Sequencer:
         self._queued_messages = []
 
     async def _process_column(self, column: int):
-        pads = self.launchpad.get_pads_in_column(column)
-        await asyncio.gather(*[p.process_pad(self._callback) for p in pads])
+        pads = self.page0.get_pads_in_column(column)
+        # TODO: Not sure this needs to be async
+        await asyncio.gather(*[self._callback(p.note if p and p.is_on else None) for p in pads])
+        self.launchpad.set_page(self.page0)
+        padnums = map(lambda x: x.note if x else None, pads)
+        self.launchpad.blink_pads(padnums)
         await self._send_queued_messages()
         await self._sleep()
-        await asyncio.gather(*[p.unblink() for p in pads])
+        self.launchpad.unblink_pads(padnums)
 
     async def _process_signals(self) -> None:
         while True:
