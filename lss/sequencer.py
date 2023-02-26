@@ -8,8 +8,7 @@ import mido
 from lss.midi import ControlMessage, NoteMessage, ClockMessage
 from lss.utils import LSS_ASCII, FunctionPad, open_output, register_signal_handler
 
-OCTAVE_CONTROL = 15
-OCTAVE_MIN, OCTAVE_MAX = -4, 4
+CLOCKS_PER_EIGHTH = 12
 
 class Param:
     def __init__(self, attribute_name, name, control, min_value, max_value):
@@ -22,6 +21,7 @@ class Param:
 PARAMS = [
     Param('_octave_shift', 'Octave', 15, -4, 4),
     Param('_rate', 'Rate', 14, 1, 3),
+    Param('_gate', 'Gate', 13, 0, 100),
 ]
 
 def shift_octaves(notes, octaves=0):
@@ -65,6 +65,7 @@ class Sequencer:
         self._octave_shift = 2
         self._rate = 2
         self._held_keys_from_host: set[int] = set()
+        self._gate = 100
 
         # Create virtual MiDI device where sequencer sends signals
         self.midi_outport = open_output("Launchpad Step Sequencer", virtual=True, autoreset=True)
@@ -173,7 +174,6 @@ class Sequencer:
             self._held_keys_from_host = self._held_keys_from_host - {msg.note}
 
     def _process_host_clock_message(self, msg: ClockMessage) -> None:
-        CLOCKS_PER_EIGHTH = 12
         if msg.type == 'clock':
             self._num_clocks += 1
             if self._num_clocks % (CLOCKS_PER_EIGHTH / self._rate) == 0:
@@ -263,9 +263,7 @@ class Sequencer:
             for message in messages:
                 self.send_note(message, note_length)
         else:
-            # TODO: Calculate chord length
-            chord_length = 0.1
-            self.send_notes(messages, chord_length)
+            self.send_notes(messages, max(1, self._gate) / 1000.0)
         self._queued_messages = []
 
     async def _process_column(self, column: int):
