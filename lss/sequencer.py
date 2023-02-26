@@ -8,6 +8,8 @@ import mido
 from lss.midi import ControlMessage, NoteMessage, ClockMessage
 from lss.utils import LSS_ASCII, FunctionPad, open_output, register_signal_handler
 
+def shift_octaves(notes, octaves=0):
+    return [note + 12 * octaves for note in notes]
 
 class Sequencer:
     def __init__(self, launchpad, debug: bool = False):
@@ -29,6 +31,7 @@ class Sequencer:
         self._num_clocks = 0
         self._prev_step = 0
         self._queued_messages = []
+        self._octave_shift = -2
 
     def _sig_handler(self, signum, frame):
         print("\nExiting...")
@@ -179,16 +182,17 @@ class Sequencer:
         self._queued_messages.append(msg)
 
     async def _send_queued_messages(self):
+        messages = shift_octaves(self._queued_messages, self._octave_shift)
         quick_arpeggio_mode = False
         if quick_arpeggio_mode:
             # TODO: Calculate note length
             note_length = 0.1
-            for message in self._queued_messages:
+            for message in messages:
                 self.send_note(message, note_length)
         else:
             # TODO: Calculate chord length
             chord_length = 0.1
-            self.send_notes(self._queued_messages, chord_length)
+            self.send_notes(messages, chord_length)
         self._queued_messages = []
 
     async def _process_column(self, column: int):

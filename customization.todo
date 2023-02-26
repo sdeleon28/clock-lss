@@ -16,6 +16,11 @@
         [ ] Assign toggle to variable
     [ ] Enhancement
         [ ] Make it so we don't use sleeps but schedule events for other ticks
+[-] Octave shift
+    [-] Make it work with a variable
+    [ ] Disable twister in Reaper
+    [ ] Tie it to a twister encoder
+        [ ] Detect encoder input
 [ ] Implement variable rate
     [ ] Make it work with fixed values
     [ ] Tie it to arrow keys (instead of current behavior for arrow keys)
