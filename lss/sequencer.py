@@ -218,7 +218,7 @@ class Sequencer(ChannelsManager.Listener):
         if pad == self.launchpad_layout.left:
             print('LEFT')
         if pad == self.launchpad_layout.right:
-            print('RIGHT')
+            self.channels_manager.copy_to_next_page()
         if pad == self.launchpad_layout.page0:
             self.channels_manager.set_page(0)
         if pad == self.launchpad_layout.page1:

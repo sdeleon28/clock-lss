@@ -50,7 +50,11 @@
     [X] Change channels and pages
     [X] Playhead modes
         [X] Turn pages
-[ ] Correct ARP index
+[X] Correct ARP index
+[ ] Implement page copy
+    [X] Copy right
+    [ ] Copy down
+[-] Include channel in messages
 [ ] Change serum presets with control message
 [ ] Option to play a column's notes in quick arpeggiated succession vs at the same time
 [ ] Document latency necessary for first notes to be grabbed

@@ -1,3 +1,5 @@
+from copy import copy
+
 from .page import Page
 
 PAGES = 4
@@ -41,9 +43,15 @@ class Channel(Page.Listener):
     def get_current_page(self):
         return self.pages[self.current_page]
 
-    def update_position(self, new_position: int):
-        # This is where we should end up when running playback
-        raise NotImplementedError
+    def copy_to_next_page(self):
+        next_index = (self.current_page + 1) % PAGES
+        current_page = self.pages[self.current_page]
+        current_page.remove_listener(self)
+        next_page = copy(current_page)
+        next_page.number = next_index
+        next_page.add_listener(self)
+        self.pages[next_index] = next_page
+        self.set_page(next_index)
 
     def __str__(self):
         return f"Channel(number={self.number}, page={self.get_current_page().number})"

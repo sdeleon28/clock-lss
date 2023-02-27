@@ -42,7 +42,7 @@ class ChannelsManager(Channel.Listener):
     def set_page(self, page: int):
         self._get_current_channel_object().set_page(page)
         if self._debug:
-            print(self._get_current_channel_object())
+            print(self._get_current_channel_object().get_current_page())
         self._notify_channel_or_page_changed()
 
     def set_channel(self, channel: int):
@@ -61,3 +61,7 @@ class ChannelsManager(Channel.Listener):
             listener.on_channel_or_page_changed(
                 self.current_channel,
                 self.get_current_page().number)
+
+    def copy_to_next_page(self):
+        self._get_current_channel_object().copy_to_next_page()
+        self._notify_channel_or_page_changed()

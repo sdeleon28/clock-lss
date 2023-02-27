@@ -1,10 +1,14 @@
 from typing import List
 from abc import ABC
+from copy import copy
 
 class PadData:
     def __init__(self, note, is_on):
         self.note = note
         self.is_on = is_on
+
+    def __copy__(self):
+        return PadData(self.note, self.is_on)
 
     def __str__(self):
         return f"PadData(note={self.note}, is_on={self.is_on})"
@@ -66,5 +70,17 @@ class Page:
         pads_ids = [Page.get_note(x, y) for y in range(8)]
         return [self.note_map.get(idx) for idx in pads_ids]
 
+    def __copy__(self):
+        new_page = Page(self.channel, self.number)
+        new_page.pads = []
+        for row in self.pads:
+            new_page.pads.append([copy(pad_data) for pad_data in row])
+        new_page.note_map = dict(
+            [(key, copy(value)) for key, value in self.note_map.items()])
+        return new_page
+
     def __str__(self):
-        return f'Page(channel={self.channel}, number={self.number})'
+        pads = []
+        for row in self.pads:
+            pads.append([str(pad_data) for pad_data in row])
+        return f'Page(channel={self.channel}, number={self.number})\n{pads}'
