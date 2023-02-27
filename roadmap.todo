@@ -43,16 +43,13 @@
     [X] Adjust step indexes
 [X] Refactor so that data and UI are separate
     -> This will allow for a richer storage format and more memory
-[-] Pages
+[X] Pages
     [X] Make it work with a single hardcoded page
     [X] Detect menu (top row) messages
     [X] Detect channel messages
     [X] Change channels and pages
-    [-] Playhead modes
-        [-] Turn pages
-        [X] Loop page
-            [ ] Maybe discard this mode?
-    [ ] Disable page change during playback
+    [X] Playhead modes
+        [X] Turn pages
 [ ] Correct ARP index
 [ ] Change serum presets with control message
 [ ] Option to play a column's notes in quick arpeggiated succession vs at the same time

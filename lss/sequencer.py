@@ -5,6 +5,7 @@ import math
 
 import mido
 from lss.channels_manager import ChannelsManager
+from lss.clock_math import get_page_for_tick, get_page_position_for_tick
 
 from lss.midi import ControlMessage, NoteMessage, ClockMessage
 from lss.utils import LSS_ASCII, open_output, register_signal_handler
@@ -118,6 +119,7 @@ class Sequencer(ChannelsManager.Listener):
 
     def _show_lss(self) -> None:
         """Show LSS when starting sequencer"""
+        self.launchpad.reset_all_pads()
         pads = [61, 51, 41, 31, 32, 65, 54, 45, 34, 68, 57, 48, 37]
         self.launchpad.blink_pads(pads)
         time.sleep(1.5)
@@ -186,7 +188,7 @@ class Sequencer(ChannelsManager.Listener):
         if msg.type == 'clock':
             self._num_clocks += 1
             if self._num_clocks % (CLOCKS_PER_EIGHTH / self._rate) == 0:
-                self._position = (self._position + 1) % 8 if self._running else self._position
+                self._position = self._position + 1 if self._running else self._position
             self._running = True
         elif msg.type == 'songpos':
             self._num_clocks = 0
@@ -196,10 +198,14 @@ class Sequencer(ChannelsManager.Listener):
             next_position_in_8ths = math.floor(next_position_in_16ths / 2)
             self._position = next_position_in_8ths
         elif msg.type == 'stop':
+            self._position = 0
             self._num_clocks = 0
+            self.channels_manager.set_page(0)
             self._running = False
         elif msg.type == 'continue':
+            self._position = 0
             self._num_clocks = 0
+            self.channels_manager.set_page(0)
             self._running = True
         elif self._debug:
             print(f'We don''t know about this clock message type: {msg}')
@@ -301,15 +307,17 @@ class Sequencer(ChannelsManager.Listener):
         self._queued_messages = []
 
     async def _process_column(self, column: int):
-        pads = self.channels_manager.get_current_page().get_pads_in_column(column)
+        self.channels_manager.set_page(get_page_for_tick(column))
+        pads = self.channels_manager.get_current_page().get_pads_in_column(
+            get_page_position_for_tick(column))
         # TODO: Not sure this needs to be async
         await asyncio.gather(*[self._callback(p.note if p and p.is_on else None) for p in pads])
         self.launchpad.set_page(self.channels_manager.get_current_page())
-        padnums = map(lambda x: x.note if x else None, pads)
-        self.launchpad.blink_pads(padnums)
+        cursor_pads = map(lambda x: x.note if x else None, pads)
+        self.launchpad.blink_pads(cursor_pads)
         await self._send_queued_messages()
         await self._sleep()
-        self.launchpad.unblink_pads(padnums)
+        self.launchpad.unblink_pads(cursor_pads)
 
     async def _process_signals(self) -> None:
         while not self._done:
