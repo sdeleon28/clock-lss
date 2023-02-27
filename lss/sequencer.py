@@ -4,6 +4,7 @@ from typing import Iterable
 import math
 
 import mido
+from lss.channels_manager import ChannelsManager
 
 from lss.midi import ControlMessage, NoteMessage, ClockMessage
 from lss.utils import LSS_ASCII, open_output, register_signal_handler
@@ -55,7 +56,7 @@ def snap(number, array):
     closest_value = array[closest_index]
     return closest_index, closest_value
 
-class Sequencer(Page.Listener):
+class Sequencer(ChannelsManager.Listener):
     def __init__(self, launchpad, debug: bool = False):
         self._done = False
 
@@ -81,11 +82,15 @@ class Sequencer(Page.Listener):
         self._show_lss()
         self._init_controller_params()
         self.launchpad_layout = LaunchpadLayout()
+        self.channels_manager = ChannelsManager()
+        self.channels_manager.add_listener(self)
+        self.launchpad.set_page(self.channels_manager.get_current_page())
 
-        self.page0 = Page(0, 0)
-        self.page0.add_listener(self)
-
-        self.launchpad.set_page(self.page0)
+    def on_channel_or_page_changed(self, channel: int, page: int):
+        self.launchpad.reset_all_pads()
+        self.launchpad.set_channel_number(channel)
+        self.launchpad.set_page_number(page)
+        self.launchpad.set_page(self.channels_manager.get_current_page())
 
     def on_page_updated(self, page: Page):
         self.launchpad.set_page(page)
@@ -105,7 +110,7 @@ class Sequencer(Page.Listener):
     def _sig_handler(self, signum, frame):
         print("\nExiting...")
         self._done = True
-        self.page0.remove_listener(self)
+        self.channels_manager.remove_listener(self)
         self.launchpad.close()
         self._running = False
         self.midi_outport.close()
@@ -209,40 +214,39 @@ class Sequencer(Page.Listener):
         if pad == self.launchpad_layout.right:
             print('RIGHT')
         if pad == self.launchpad_layout.page0:
-            print('PAGE 0')
+            self.channels_manager.set_page(0)
         if pad == self.launchpad_layout.page1:
-            print('PAGE 1')
+            self.channels_manager.set_page(1)
         if pad == self.launchpad_layout.page2:
-            print('PAGE 2')
+            self.channels_manager.set_page(2)
         if pad == self.launchpad_layout.page3:
-            print('PAGE 3')
+            self.channels_manager.set_page(3)
 
     def _process_channel_pad(self, pad):
         if pad == self.launchpad_layout.channel0:
-            print('CHANNEL 0')
+            self.channels_manager.set_channel(0)
         if pad == self.launchpad_layout.channel1:
-            print('CHANNEL 1')
+            self.channels_manager.set_channel(1)
         if pad == self.launchpad_layout.channel2:
-            print('CHANNEL 2')
+            self.channels_manager.set_channel(2)
         if pad == self.launchpad_layout.channel3:
-            print('CHANNEL 3')
+            self.channels_manager.set_channel(3)
         if pad == self.launchpad_layout.channel4:
-            print('CHANNEL 4')
+            self.channels_manager.set_channel(4)
         if pad == self.launchpad_layout.channel5:
-            print('CHANNEL 5')
+            self.channels_manager.set_channel(5)
         if pad == self.launchpad_layout.channel6:
-            print('CHANNEL 6')
+            self.channels_manager.set_channel(6)
         if pad == self.launchpad_layout.channel7:
-            print('CHANNEL 7')
+            self.channels_manager.set_channel(7)
 
     def _process_pad_message(self, msg: NoteMessage) -> None:
         if msg.velocity == 0:
             return
-
         if self.launchpad_layout.is_channel_pad(msg.note):
             self._process_channel_pad(msg.note)
         else:
-            self.page0.toggle_pad_by_note(msg.note)
+            self.channels_manager.get_current_page().toggle_pad_by_note(msg.note)
 
     def _mute(self, msg: int) -> None:
         """All pads in last right column are used to mute corresponding row"""
@@ -297,10 +301,10 @@ class Sequencer(Page.Listener):
         self._queued_messages = []
 
     async def _process_column(self, column: int):
-        pads = self.page0.get_pads_in_column(column)
+        pads = self.channels_manager.get_current_page().get_pads_in_column(column)
         # TODO: Not sure this needs to be async
         await asyncio.gather(*[self._callback(p.note if p and p.is_on else None) for p in pads])
-        self.launchpad.set_page(self.page0)
+        self.launchpad.set_page(self.channels_manager.get_current_page())
         padnums = map(lambda x: x.note if x else None, pads)
         self.launchpad.blink_pads(padnums)
         await self._send_queued_messages()

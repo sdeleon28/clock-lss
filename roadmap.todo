@@ -31,7 +31,7 @@
     [X] Make it work with fixed values
     [X] Tie it to encoder
     [ ] Make it so instead of integer values, it snaps to a list of values
-    [ ] Adjust range
+        [ ] Allow for 0.25x and 0.5x
 [X] Sync playhead with MIDI clock
     [X] Playing in Reaper moves cursor
     [X] Moving cursor in Reaper moves cursor
@@ -47,45 +47,31 @@
     [X] Make it work with a single hardcoded page
     [X] Detect menu (top row) messages
     [X] Detect channel messages
-    [-] Change channels and pages
-    [ ] Make playhead smart enough to scroll through pages
-[ ] Make gate control sensitive to running tempo
-[ ] Allow for multi-channel mode
-[ ] Special mode
-    [ ] Song master mode copies all pages of first sequencer to all channels
-    [ ] Channel master mode copies first page of active seq to all pages in the same seq
-    [ ] Mute mode allows to mute notes and keep them visible
-    [ ] Legato mode
-        [ ] Selected notes become open notes
-        [ ] They close when they get to the next one
-    [ ] Playhead modes
-        [ ] Follow clock
-        [ ] Still (show moving cursor when it's on this page)
-[ ] Option to play a column's notes in quick arpeggiated succession vs a the same time
+    [X] Change channels and pages
+    [-] Playhead modes
+        [-] Turn pages
+        [X] Loop page
+            [ ] Maybe discard this mode?
+    [ ] Disable page change during playback
+[ ] Correct ARP index
+[ ] Change serum presets with control message
+[ ] Option to play a column's notes in quick arpeggiated succession vs at the same time
 [ ] Document latency necessary for first notes to be grabbed
-[ ] Refactor to make state independent of UI
-    [ ] Make UI a function of state and not viceversa
-    [ ] This gives me more memory host more things than the UI can hold
-[ ] Change channels with arrow keys
-    [ ] Each channel holds its own running sequencer
-    [ ] Next / prev arrows
-    [ ] Pressing both arrows allows for bird's eye channel control
-        [ ] Select channel
-        [ ] Mute channel
+[X] Refactor to make state independent of UI
+    [X] Make UI a function of state and not viceversa
+        -> This gives me more memory host more things than the UI can hold
+[ ] Pressing both arrows allows for bird's eye channel control
+    [ ] Select channel
+    [ ] Mute channel
 [ ] Twister is context sensitive
     [ ] Only relevant to selected channel
     [ ] Controls
-        [ ] Gate
+        [X] Gate
         [X] Rate
-        [ ] Straight / triplet
         [X] +- octave
-        [ ] Scale
+        [ ] Straight / triplet
 [ ] Receive harmony and drumkit on different channels
     [ ] Drumkit channel could be smart enough to always have all the notes on
-[ ] Copy / paste channel state
-[ ] Advanced Sensitivity
-    [ ] Do this if the launchpad allows to control light intensity (probabably does)
-    [ ] Detect velocity on pad press, record it as part of the stored value
-    [ ] When displaying, use the recorded velocity as intensity
 [ ] Save / load state to / from file
+[ ] Make gate control sensitive to running tempo
 [ ] Read mode

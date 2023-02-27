@@ -4,6 +4,7 @@ import mido
 
 from lss.pad import Pad
 from lss.utils import open_input, open_output, Color
+from .launchpad_layout import LaunchpadLayout
 from ..page import Page
 
 class BaseLaunchpad:
@@ -20,7 +21,10 @@ class BaseLaunchpad:
         self._host_inport = open_input(self.name + " Virtual Input", virtual=True, autoreset=True)
         # TODO: This has nothing to do with the launchpad, move it to a different class
         self._controller_inport = open_input('Midi Fighter Twister', autoreset=True)
+        self.layout = LaunchpadLayout()
         self.reset_all_pads()
+        self.set_channel_number(0)
+        self.set_page_number(0)
 
     def hand_shake(self):
         raise NotImplementedError()
@@ -93,6 +97,12 @@ class BaseLaunchpad:
     def off(self, note: int) -> None:
         self._outport.send(mido.Message("note_off", note=note))
 
+    def control_on(self, control: int, color: int = 63) -> None:
+        self._outport.send(mido.Message("control_change", control=control, value=color))
+
+    def control_off(self, control: int) -> None:
+        self._outport.send(mido.Message("control_change", control=control, value=0))
+
     def get_pending_messages(self):
         return self._inport.iter_pending()
 
@@ -101,3 +111,49 @@ class BaseLaunchpad:
 
     def get_pending_controller_messages(self):
         return self._controller_inport.iter_pending()
+
+    def _reset_channels(self):
+        self.off(self.layout.channel0)
+        self.off(self.layout.channel1)
+        self.off(self.layout.channel2)
+        self.off(self.layout.channel3)
+        self.off(self.layout.channel4)
+        self.off(self.layout.channel5)
+        self.off(self.layout.channel6)
+        self.off(self.layout.channel7)
+
+    def _reset_pages(self):
+        self.control_off(self.layout.page0)
+        self.control_off(self.layout.page1)
+        self.control_off(self.layout.page2)
+        self.control_off(self.layout.page3)
+
+    def set_channel_number(self, channel: int):
+        self._reset_channels()
+        if channel == 0:
+            self.on(self.layout.channel0)
+        elif channel == 1:
+            self.on(self.layout.channel1)
+        elif channel == 2:
+            self.on(self.layout.channel2)
+        elif channel == 3:
+            self.on(self.layout.channel3)
+        elif channel == 4:
+            self.on(self.layout.channel4)
+        elif channel == 5:
+            self.on(self.layout.channel5)
+        elif channel == 6:
+            self.on(self.layout.channel6)
+        elif channel == 7:
+            self.on(self.layout.channel7)
+
+    def set_page_number(self, page: int):
+        self._reset_pages()
+        if page == 0:
+            self.control_on(self.layout.page0)
+        elif page == 1:
+            self.control_on(self.layout.page1)
+        elif page == 2:
+            self.control_on(self.layout.page2)
+        elif page == 3:
+            self.control_on(self.layout.page3)

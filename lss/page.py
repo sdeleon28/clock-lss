@@ -16,6 +16,7 @@ class Page:
             raise NotImplementedError
             
     def __init__(self, channel, number):
+        self._debug = False
         self.channel = channel
         self.number = number
         self.note_map: dict[int, PadData] = {}
@@ -27,10 +28,6 @@ class Page:
                 note = Page.get_note(x, y)
                 self.pads[x][y] = PadData(note, False)
                 self.note_map[note] = self.pads[x][y]
-        self.pads[0][0] = PadData(Page.get_note(0, 0), True)
-        self.note_map[Page.get_note(0, 0)] = self.pads[0][0]
-        self.pads[3][0] = PadData(Page.get_note(3, 0), True)
-        self.note_map[Page.get_note(3, 0)] = self.pads[3][0]
         for row in self.pads:
             for pad_data in row:
                 self.note_map[pad_data.note] = pad_data
@@ -59,18 +56,9 @@ class Page:
         self.notify_update()
 
     def toggle_pad_by_note(self, note):
+        if self._debug:
+            print(f'{self} -> toggle_pad_by_note', note)
         self.note_map[note].is_on = not self.note_map[note].is_on
-        self.notify_update()
-
-    def on(self, note, color):
-        # FIXME: Handle color here
-        print("on", note, color)
-        self.note_map[note] = PadData(note, True)
-        self.notify_update()
-
-    def off(self, note):
-        print("off", note)
-        self.note_map[note] = PadData(note, False)
         self.notify_update()
 
     def get_pads_in_column(self, x: int) -> List[PadData | None]:
