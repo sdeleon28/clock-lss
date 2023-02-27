@@ -8,6 +8,8 @@ import mido
 from lss.midi import ControlMessage, NoteMessage, ClockMessage
 from lss.utils import LSS_ASCII, open_output, register_signal_handler
 from .page import Page
+from lss.devices.launchpad_layout import LaunchpadLayout
+
 
 CLOCKS_PER_EIGHTH = 12
 
@@ -55,6 +57,8 @@ def snap(number, array):
 
 class Sequencer(Page.Listener):
     def __init__(self, launchpad, debug: bool = False):
+        self._done = False
+
         # Sequencer state and control
         self._running = True
         self._debug = debug
@@ -76,6 +80,7 @@ class Sequencer(Page.Listener):
         self.launchpad.hand_shake()
         self._show_lss()
         self._init_controller_params()
+        self.launchpad_layout = LaunchpadLayout()
 
         self.page0 = Page(0, 0)
         self.page0.add_listener(self)
@@ -99,10 +104,12 @@ class Sequencer(Page.Listener):
 
     def _sig_handler(self, signum, frame):
         print("\nExiting...")
+        self._done = True
         self.page0.remove_listener(self)
         self.launchpad.close()
         self._running = False
         self.midi_outport.close()
+        self._queued_messages = []
 
     def _show_lss(self) -> None:
         """Show LSS when starting sequencer"""
@@ -112,7 +119,7 @@ class Sequencer(Page.Listener):
         self.launchpad.reset_all_pads()
 
     async def _sleep(self) -> None:
-        while self._prev_step == self._position:
+        while not self._done and self._prev_step == self._position:
             await asyncio.sleep(0.001)
         self._prev_step = self._position
 
@@ -157,13 +164,12 @@ class Sequencer(Page.Listener):
                 setattr(self, param.attribute_name, snapped_octave_value)
 
     def _process_control_message(self, msg: ControlMessage) -> None:
+        if self._debug:
+            print('CONTROL message: {}'.format(msg))
         if msg.value != 127:
             return
-
-        # Last control column for muting
-        if (msg.control - 9) % 10 == 0:
-            self._mute(msg.control)
-            return
+        if self.launchpad_layout.is_menu_pad(msg.control):
+            self._process_menu_pad(msg.control)
 
     def _process_host_note_message(self, msg: NoteMessage) -> None:
         if msg.type == 'note_on':
@@ -193,10 +199,50 @@ class Sequencer(Page.Listener):
         elif self._debug:
             print(f'We don''t know about this clock message type: {msg}')
 
+    def _process_menu_pad(self, pad):
+        if pad == self.launchpad_layout.up:
+            print('UP')
+        if pad == self.launchpad_layout.down:
+            print('DOWN')
+        if pad == self.launchpad_layout.left:
+            print('LEFT')
+        if pad == self.launchpad_layout.right:
+            print('RIGHT')
+        if pad == self.launchpad_layout.page0:
+            print('PAGE 0')
+        if pad == self.launchpad_layout.page1:
+            print('PAGE 1')
+        if pad == self.launchpad_layout.page2:
+            print('PAGE 2')
+        if pad == self.launchpad_layout.page3:
+            print('PAGE 3')
+
+    def _process_channel_pad(self, pad):
+        if pad == self.launchpad_layout.channel0:
+            print('CHANNEL 0')
+        if pad == self.launchpad_layout.channel1:
+            print('CHANNEL 1')
+        if pad == self.launchpad_layout.channel2:
+            print('CHANNEL 2')
+        if pad == self.launchpad_layout.channel3:
+            print('CHANNEL 3')
+        if pad == self.launchpad_layout.channel4:
+            print('CHANNEL 4')
+        if pad == self.launchpad_layout.channel5:
+            print('CHANNEL 5')
+        if pad == self.launchpad_layout.channel6:
+            print('CHANNEL 6')
+        if pad == self.launchpad_layout.channel7:
+            print('CHANNEL 7')
+
     def _process_pad_message(self, msg: NoteMessage) -> None:
         if msg.velocity == 0:
             return
-        self.page0.toggle_pad_by_note(msg.note)
+
+        if self.launchpad_layout.is_channel_pad(msg.note):
+            self._process_channel_pad(msg.note)
+        else:
+            self.page0.toggle_pad_by_note(msg.note)
 
     def _mute(self, msg: int) -> None:
         """All pads in last right column are used to mute corresponding row"""
@@ -262,14 +308,14 @@ class Sequencer(Page.Listener):
         self.launchpad.unblink_pads(padnums)
 
     async def _process_signals(self) -> None:
-        while True:
+        while not self._done:
             await asyncio.gather(*[self._process_msg(m) for m in self.launchpad.get_pending_messages()])
             await asyncio.gather(*[self._process_host_msg(m) for m in self.launchpad.get_pending_messages_from_host()])
             await asyncio.gather(*[self._process_controller_message(m) for m in self.launchpad.get_pending_controller_messages()])
             await asyncio.sleep(0.001)
 
     def column_iterator(self) -> Iterable[int]:
-        while True:
+        while not self._done:
             yield self._position
             time.sleep(0.001)
 

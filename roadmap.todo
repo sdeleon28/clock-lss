@@ -45,9 +45,11 @@
     -> This will allow for a richer storage format and more memory
 [-] Pages
     [X] Make it work with a single hardcoded page
-    [ ] Detect page control messages
-    [ ] Change pages by pressing buttons
+    [X] Detect menu (top row) messages
+    [X] Detect channel messages
+    [-] Change channels and pages
     [ ] Make playhead smart enough to scroll through pages
+[ ] Make gate control sensitive to running tempo
 [ ] Allow for multi-channel mode
 [ ] Special mode
     [ ] Song master mode copies all pages of first sequencer to all channels

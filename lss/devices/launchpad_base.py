@@ -27,8 +27,9 @@ class BaseLaunchpad:
 
     def close(self):
         self.reset_all_pads()
-        self._inport.close()
         self._outport.close()
+        self._controller_outport.close()
+        self._inport.close()
         self._host_inport.close()
         self._controller_inport.close()
 
