@@ -2,6 +2,7 @@ import asyncio
 import time
 from typing import Iterable
 import math
+from copy import copy
 
 import mido
 from lss.channels_manager import ChannelsManager
@@ -15,6 +16,7 @@ from lss.devices.launchpad_layout import LaunchpadLayout
 
 CLOCKS_PER_EIGHTH = 12
 
+
 class Param:
     def __init__(self, attribute_name, name, control, min_value, max_value):
         self.attribute_name = attribute_name
@@ -23,17 +25,21 @@ class Param:
         self.min_value = min_value
         self.max_value = max_value
 
+
 PARAMS = [
     Param('_octave_shift', 'Octave', 15, -4, 4),
     Param('_rate', 'Rate', 14, 1, 3),
     Param('_gate', 'Gate', 13, 0, 100),
 ]
 
-def shift_octaves(notes, octaves=0):
-    return [note + 12 * octaves for note in notes]
+
+def shift_octaves(note: int, octaves=0):
+    return note + (octaves * 12)
+
 
 def clip_to_range(n, min_val, max_val):
     return max(min_val, min(n, max_val))
+
 
 def control_message_to_proportion(num):
     max_control = 127
@@ -42,20 +48,35 @@ def control_message_to_proportion(num):
     res = round(num/float(max_control) * 1.1, 2)
     return clip_to_range(res, 0, 1)
 
+
 def get_value_from_proportion(proportion, min_val, max_val):
     if proportion < 0 or proportion > 1:
         raise ValueError("Proportion must be between 0 and 1")
     return min_val + (max_val - min_val) * proportion
 
+
 def get_proportion_from_value(value, min_val, max_val):
     if value < min_val or value > max_val:
-        raise ValueError("Value must be between {} and {}".format(min_val, max_val))
+        raise ValueError(
+            "Value must be between {} and {}".format(min_val, max_val))
     return (value - min_val) / (max_val - min_val)
 
+
 def snap(number, array):
-    closest_index = min(range(len(array)), key=lambda i: abs(array[i] - number))
+    closest_index = min(range(len(array)),
+                        key=lambda i: abs(array[i] - number))
     closest_value = array[closest_index]
     return closest_index, closest_value
+
+
+class QueueMessage:
+    def __init__(self, channel, note):
+        self.channel = channel
+        self.note = note
+
+    def __copy__(self):
+        return QueueMessage(self.channel, self.note)
+
 
 class Sequencer(ChannelsManager.Listener):
     def __init__(self, launchpad, debug: bool = False):
@@ -67,14 +88,15 @@ class Sequencer(ChannelsManager.Listener):
         self._position = 0
         self._num_clocks = 0
         self._prev_step = 0
-        self._queued_messages = []
+        self._queued_messages: list[QueueMessage] = []
         self._octave_shift = 2
         self._rate = 2
         self._held_keys_from_host: set[int] = set()
         self._gate = 100
 
         # Create virtual MiDI device where sequencer sends signals
-        self.midi_outport = open_output("Launchpad Step Sequencer", virtual=True, autoreset=True)
+        self.midi_outport = open_output(
+            "Launchpad Step Sequencer", virtual=True, autoreset=True)
         register_signal_handler(self._sig_handler)
 
         # Setup launchpad
@@ -102,7 +124,8 @@ class Sequencer(ChannelsManager.Listener):
                                                  int(
                                                      get_value_from_proportion(
                                                          get_proportion_from_value(
-                                                             getattr(self, param.attribute_name),
+                                                             getattr(
+                                                                 self, param.attribute_name),
                                                              param.min_value,
                                                              param.max_value),
                                                          0,
@@ -163,11 +186,13 @@ class Sequencer(ChannelsManager.Listener):
 
         if ControlMessage.is_control(msg):
             if msg.control in map(lambda p: p.control, PARAMS):
-                param = list(filter(lambda p: p.control == msg.control, PARAMS))[0]
+                param = list(
+                    filter(lambda p: p.control == msg.control, PARAMS))[0]
                 octave_value = get_value_from_proportion(control_message_to_proportion(msg.value),
-                                                               param.min_value,
-                                                               param.max_value)
-                _snapped_octave_index, snapped_octave_value = snap(octave_value, range(param.min_value, param.max_value + 1))
+                                                         param.min_value,
+                                                         param.max_value)
+                _snapped_octave_index, snapped_octave_value = snap(
+                    octave_value, range(param.min_value, param.max_value + 1))
                 setattr(self, param.attribute_name, snapped_octave_value)
 
     def _process_control_message(self, msg: ControlMessage) -> None:
@@ -261,37 +286,48 @@ class Sequencer(ChannelsManager.Listener):
             if hasattr(pad, 'mute'):
                 pad.mute()
 
-    def send_note(self, note, length=0.1) -> None:
+    def send_note(self, message: QueueMessage, length=0.1) -> None:
         """Send note to virtual MiDI device"""
-        self.midi_outport.send(mido.Message("note_on", note=note))
+        self.midi_outport.send(mido.Message(
+            "note_on", channel=message.channel, note=message.note))
         time.sleep(length)
-        self.midi_outport.send(mido.Message("note_off", note=note))
+        self.midi_outport.send(mido.Message(
+            "note_off", channel=message.channel, note=message.note))
 
-    def send_notes(self, notes, length=0.1) -> None:
+    def send_notes(self, messages: list[QueueMessage], length=0.1) -> None:
         """Send note to virtual MiDI device"""
-        for note in notes:
-            self.midi_outport.send(mido.Message("note_on", note=note))
+        for message in messages:
+            self.midi_outport.send(mido.Message(
+                "note_on", channel=message.channel, note=message.note))
         time.sleep(length)
-        for note in notes:
-            self.midi_outport.send(mido.Message("note_off", note=note))
+        for message in messages:
+            self.midi_outport.send(mido.Message(
+                "note_off", channel=message.channel, note=message.note))
 
     async def _callback(self, pad_number):
         if self._running and pad_number != None:
             index_to_pick = self.launchpad_layout.pad_to_arp_index(pad_number)
             keys = sorted(list(self._held_keys_from_host))
             if keys:
-                keys_in_octaves = []
+                keys_in_octaves: list[int] = []
                 for octaves in range(8):
-                    keys_in_octaves += shift_octaves(keys, octaves)
-                out_message = keys_in_octaves[index_to_pick]
-                self._queue_message(out_message)
+                    keys_in_octaves += [shift_octaves(key, octaves)
+                                        for key in keys]
+                out_note = keys_in_octaves[index_to_pick]
+                # TODO
+                channel = 0
+                self._queue_message(QueueMessage(channel, out_note))
 
-    def _queue_message(self, msg):
+    def _queue_message(self, msg: QueueMessage):
         self._queued_messages.append(msg)
 
     async def _send_queued_messages(self):
-        messages = shift_octaves(self._queued_messages, self._octave_shift)
-        messages = list(filter(lambda m: m >=0 and m < 128, messages))
+        messages = []
+        for msg in self._queued_messages:
+            transformed_msg = copy(msg)
+            transformed_msg.note = shift_octaves(msg.note, self._octave_shift)
+            if transformed_msg.note >= 0 and transformed_msg.note < 128:
+                messages.append(transformed_msg)
         quick_arpeggio_mode = False
         if quick_arpeggio_mode:
             # TODO: Calculate note length
@@ -329,7 +365,8 @@ class Sequencer(ChannelsManager.Listener):
 
     async def run(self) -> None:
         print(LSS_ASCII)
-        print(f"Launchpad Step Sequencer is running using {self.launchpad.name}")
+        print(
+            f"Launchpad Step Sequencer is running using {self.launchpad.name}")
         asyncio.get_event_loop().create_task(self._process_signals())
         for column in self.column_iterator():
             await self._process_column(column)

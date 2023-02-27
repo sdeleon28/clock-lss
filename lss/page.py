@@ -2,6 +2,7 @@ from typing import List
 from abc import ABC
 from copy import copy
 
+
 class PadData:
     def __init__(self, note, is_on):
         self.note = note
@@ -18,7 +19,7 @@ class Page:
     class Listener(ABC):
         def on_page_updated(self, page: "Page"):
             raise NotImplementedError
-            
+
     def __init__(self, channel, number):
         self._debug = False
         self.channel = channel
