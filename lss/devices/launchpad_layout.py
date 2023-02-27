@@ -86,6 +86,14 @@ class LaunchpadLayout:
     def is_channel_pad(self, pad):
         return pad in self.last_column
 
+    def pad_to_arp_index(self, pad):
+        for column in self.columns:
+            if pad in column:
+                reversed_column = column[:]
+                reversed_column.reverse()
+                return reversed_column.index(pad)
+        return 0
+
     def __str__(self):
         rows = [self.top_row] + self.rows
         columns = transpose(rows)

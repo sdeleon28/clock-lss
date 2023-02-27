@@ -276,12 +276,8 @@ class Sequencer(ChannelsManager.Listener):
             self.midi_outport.send(mido.Message("note_off", note=note))
 
     async def _callback(self, pad_number):
-        def pad_number_to_arp_index(pad_number):
-            vertical_notes = [51, 43, 49, 44, 42, 39, 38, 36]
-            arp_index = vertical_notes.index(pad_number) if pad_number in vertical_notes else 0
-            return arp_index
         if self._running and pad_number != None:
-            index_to_pick = pad_number_to_arp_index(pad_number)
+            index_to_pick = self.launchpad_layout.pad_to_arp_index(pad_number)
             keys = sorted(list(self._held_keys_from_host))
             if keys:
                 keys_in_octaves = []
