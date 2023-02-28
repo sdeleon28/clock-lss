@@ -15,6 +15,7 @@ class PadData:
         return f"PadData(note={self.note}, is_on={self.is_on})"
 
 
+# FIXME: This class holds duplicate state which causes all kinds of evils
 class Page:
     class Listener(ABC):
         def on_page_updated(self, page: "Page"):
@@ -54,16 +55,22 @@ class Page:
 
     def _set_pad(self, x, y, padData: PadData):
         self.pads[x][y] = padData
+        self.note_map[padData.note] = padData
         self.notify_update()
 
-    def toggle_pad(self, x, y):
-        self.pads[x][y].is_on = not self.pads[x][y].is_on
-        self.notify_update()
+    def get_coords_from_note(self, note):
+        for x in range(8):
+            for y in range(8):
+                if self.pads[x][y].note == note:
+                    return x, y
+        return None, None
 
     def toggle_pad_by_note(self, note):
         if self._debug:
             print(f'{self} -> toggle_pad_by_note', note)
-        self.note_map[note].is_on = not self.note_map[note].is_on
+        x, y = self.get_coords_from_note(note)
+        if not x is None and not y is None:
+            self._set_pad(x, y, PadData(note, not self.pads[x][y].is_on))
         self.notify_update()
 
     def get_pads_in_column(self, x: int) -> List[PadData | None]:
