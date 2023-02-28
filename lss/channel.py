@@ -195,7 +195,7 @@ class Channel(Page.Listener):
     def copy_to_next_page(self):
         next_index = (self.current_page + 1) % PAGES
         current_page = self.pages[self.current_page]
-        current_page.remove_listener(self)
+        self.pages[next_index].remove_listener(self)
         next_page = copy(current_page)
         next_page.number = next_index
         next_page.add_listener(self)
