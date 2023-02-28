@@ -54,25 +54,35 @@
 [ ] Implement page copy
     [X] Copy right
     [ ] Copy down
-[-] Include channel in messages
+[X] Include channel in messages
 [ ] Change serum presets with control message
 [ ] Option to play a column's notes in quick arpeggiated succession vs at the same time
 [ ] Document latency necessary for first notes to be grabbed
 [X] Refactor to make state independent of UI
     [X] Make UI a function of state and not viceversa
         -> This gives me more memory host more things than the UI can hold
-[ ] Pressing both arrows allows for bird's eye channel control
-    [ ] Select channel
-    [ ] Mute channel
 [ ] Twister is context sensitive
-    [ ] Only relevant to selected channel
+    [X] Only relevant to selected channel
     [ ] Controls
         [X] Gate
         [X] Rate
         [X] +- octave
         [ ] Straight / triplet
+    [ ] Launch on next bar
+        [ ] Green light -> Running
+        [ ] Yellow light -> About to stop
+        [ ] Red light -> About to start
+        [ ] Lights off -> Muted
+    [ ] Stop on next bar
+[-] Bug: Cannot edit anymore after seq runs for a bit
 [ ] Receive harmony and drumkit on different channels
     [ ] Drumkit channel could be smart enough to always have all the notes on
 [ ] Save / load state to / from file
-[ ] Make gate control sensitive to running tempo
-[ ] Read mode
+[ ] Make gate control sensitive to running tempo and rate
+[ ] Read mode / reader program
+    -> This could probably be implemented more easily after file saving / loading is implemented
+    -> Read MIDI events and turn them into the same object structures as the seq
+    -> Pickle that down
+    [ ] Unpickle to load
+    [ ] Program reads as much time as 8 steps
+        [ ] Probably too hard to figure out the rate

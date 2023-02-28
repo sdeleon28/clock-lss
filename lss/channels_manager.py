@@ -1,3 +1,5 @@
+import asyncio
+from lss.midi import NoteMessage
 from .channel import Channel
 from .page import Page
 
@@ -18,20 +20,30 @@ class ChannelsManager(Channel.Listener):
     def remove_listener(self, listener):
         self.listeners = self.listeners - {listener}
 
-    def __init__(self):
-        self._debug = False
+    def __init__(self, launchpad, midi_outport, debug):
+        self._debug = debug
+        self.launchpad = launchpad
 
         self.listeners: set[ChannelsManager.Listener] = set([])
         self.channels: list[Channel] = []
         for i in range(CHANNELS):
-            channel = Channel(i)
+            channel = Channel(i, launchpad, midi_outport, debug)
             channel.add_listener(self)
             self.channels.append(channel)
         self.current_channel = 0
 
-    def __del__(self):
+    def close(self):
         for channel in self.channels:
             channel.remove_listener(self)
+            channel.close()
+
+    def proceess_host_note_message(self, msg: NoteMessage):
+        for channel in self.channels:
+            channel.proceess_host_note_message(msg)
+
+    def process_host_clock_message(self, msg):
+        for channel in self.channels:
+            channel.process_host_clock_message(msg)
 
     def _get_current_channel_object(self):
         return self.channels[self.current_channel]
@@ -47,6 +59,11 @@ class ChannelsManager(Channel.Listener):
 
     def set_channel(self, channel: int):
         self.current_channel = channel
+        channel_object = self._get_current_channel_object()
+        channel_object.init_controller_params()
+        for c in self.channels:
+            c.is_active = False
+        channel_object.is_active = True
         if self._debug:
             print(self._get_current_channel_object())
         self._notify_channel_or_page_changed()
@@ -55,6 +72,9 @@ class ChannelsManager(Channel.Listener):
         if (page.channel == self.current_channel):
             for listener in self.listeners:
                 listener.on_page_updated(page)
+
+    def on_page_changed(self, pagenum: int):
+        self._notify_channel_or_page_changed()
 
     def _notify_channel_or_page_changed(self):
         for listener in self.listeners:
@@ -65,3 +85,10 @@ class ChannelsManager(Channel.Listener):
     def copy_to_next_page(self):
         self._get_current_channel_object().copy_to_next_page()
         self._notify_channel_or_page_changed()
+
+    async def process_controller_message(self, msg) -> None:
+        for channel in self.channels:
+            await channel.process_controller_message(msg)
+
+    async def run(self):
+        await asyncio.gather(*[channel.run() for channel in self.channels])
