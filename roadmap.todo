@@ -58,6 +58,7 @@
 [ ] Change serum presets with control message
 [ ] Option to play a column's notes in quick arpeggiated succession vs at the same time
 [ ] Document latency necessary for first notes to be grabbed
+[X] Improve rate behaviour
 [X] Refactor to make state independent of UI
     [X] Make UI a function of state and not viceversa
         -> This gives me more memory host more things than the UI can hold

@@ -146,9 +146,17 @@ class Channel(Page.Listener):
 
     def process_host_clock_message(self, msg: ClockMessage) -> None:
         if msg.type == 'clock':
+            # This could be calculated mathematically
+            # TODO: Make rate snap to these values
+            rates_to_step_sizes = {
+                0.25: 48,
+                0.5: 24,
+                1: 12,
+                2: 6,
+                3: 3,
+            }
+            self._position = math.floor(self._num_clocks / rates_to_step_sizes[self._rate])
             self._num_clocks += 1
-            if self._num_clocks % (CLOCKS_PER_EIGHTH / self._rate) == 0:
-                self._position = self._position + 1 if self._running else self._position
             self._running = True
         elif msg.type == 'songpos':
             self._num_clocks = 0
