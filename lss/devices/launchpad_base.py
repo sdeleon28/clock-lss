@@ -6,6 +6,8 @@ from lss.pad import Pad
 from lss.utils import open_input, open_output, Color
 from .launchpad_layout import LaunchpadLayout
 from ..page import Page
+from lss.devices.launchpad_colours import Color as C
+
 
 class BaseLaunchpad:
     row_count: int
@@ -57,7 +59,7 @@ class BaseLaunchpad:
                 pad_data = page.pads[x][y]
                 pad = Pad(x, y, launchpad=self)
                 if pad_data.is_on:
-                    self.on(pad_data.note, Color.GREEN)
+                    self.on(pad_data.note, pad_data.color)
                     pad.on()
                 else:
                     self.off(pad_data.note)

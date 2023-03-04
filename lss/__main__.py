@@ -1,8 +1,10 @@
 import asyncio
 
 import click
+from lss.colors import Colors
 
 from lss.devices import DEVICES, DEVICES_NAMES
+from lss.devices.launchpad_mk2_12 import LaunchpadMk2_12
 from lss.sequencer import Sequencer
 
 
@@ -18,6 +20,12 @@ async def _run_sequencer(device_type: str, **kwargs):
     await sequencer.run()
 
 
+async def _run_colors():
+    launchpad = LaunchpadMk2_12()
+    colors = Colors(launchpad)
+    await colors.run()
+
+
 @click.command(name="run")
 @click.option(
     "--device-type",
@@ -30,6 +38,12 @@ async def _run_sequencer(device_type: str, **kwargs):
 def run_sequencer(device_type: str, debug: bool = False):
     """Starts step sequencer"""
     asyncio.run(_run_sequencer(device_type=device_type, debug=debug))
+
+
+@click.command(name="colors")
+def run_colors(debug: bool = False):
+    """Starts step sequencer"""
+    asyncio.run(_run_colors())
 
 
 @click.group(name="devices")
@@ -47,6 +61,7 @@ def list_devices():
 
 cli.add_command(devices_group)
 cli.add_command(run_sequencer)
+cli.add_command(run_colors)
 
 
 def main():
