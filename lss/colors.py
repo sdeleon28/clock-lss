@@ -35,6 +35,14 @@ class Colors(ChannelsManager.Listener):
         # Test colors
         self.launchpad.unblink_pads(range(11, 11+63+16))
 
+        # GREEN = [24, 20, 25, 26, 21, 22]
+        # def get_green_index(velocity: int):
+        #     return int((velocity / 127) * (len(GREEN) - 1))
+
+        # self.launchpad.on(11, GREEN[get_green_index(0)])
+        # self.launchpad.on(12, GREEN[get_green_index(64)])
+        # self.launchpad.on(13, GREEN[get_green_index(127)])
+
         self.launchpad.on(11, C.get(C.GREEN, C.Intensity._0))
         self.launchpad.on(12, C.get(C.GREEN, C.Intensity._1))
         self.launchpad.on(13, C.get(C.GREEN, C.Intensity._2))

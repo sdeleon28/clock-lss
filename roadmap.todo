@@ -87,3 +87,14 @@
     [ ] Unpickle to load
     [ ] Program reads as much time as 8 steps
         [ ] Probably too hard to figure out the rate
+
+## Current sidequest: Velocity + feedback
+
+[-] Commit stuff about colors
+[ ] Store last modified pad
+[ ] Connect CC message from knob (0, 0) to velocity of last pad
+[ ] Make the UI use this code:
+
+        GREEN = [24, 20, 25, 26, 21, 22]
+        def get_green_index(velocity: int):
+            return int((velocity / 127) * (len(GREEN) - 1))
