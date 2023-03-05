@@ -1,7 +1,7 @@
 import asyncio
 from lss.midi import NoteMessage
 from .channel import Channel
-from .page import Page
+from .page import PadLocation, Page
 
 CHANNELS = 8
 
@@ -36,6 +36,12 @@ class ChannelsManager(Channel.Listener):
         for channel in self.channels:
             channel.remove_listener(self)
             channel.close()
+
+    def set_velocity(self, pad_location: PadLocation, velocity: int):
+        channel = self.channels[pad_location.channel]
+        page = channel.pages[pad_location.page]
+        page.set_velocity(
+            pad_location.x, pad_location.y, velocity)
 
     def proceess_host_note_message(self, msg: NoteMessage):
         for channel in self.channels:

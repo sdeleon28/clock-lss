@@ -2,20 +2,40 @@ from typing import List
 from abc import ABC
 from copy import copy
 
-# from lss.devices.launchpad_colours import Color
 
+def _get_color_intensity_for_velocity(colors: list[int], velocity: int):
+    return int((velocity / 127) * (len(colors) - 1))
+
+def get_color_for_velocity(colors: list[int], velocity: int):
+    return colors[_get_color_intensity_for_velocity(colors, velocity)]
 
 class PadData:
-    def __init__(self, note, is_on, color=None):
+    def __init__(self, note, is_on, velocity=127):
         self.note = note
         self.is_on = is_on
-        self.color = color
+        self.velocity = velocity
 
     def __copy__(self):
-        return PadData(self.note, self.is_on, self.color)
+        return PadData(self.note, self.is_on, self.velocity)
+
+    @property
+    def color(self):
+        from lss.devices.launchpad_colours import Color
+        return get_color_for_velocity(Color.GREEN, self.velocity)
 
     def __str__(self):
-        return f"PadData(note={self.note}, is_on={self.is_on}, color={self.color})"
+        return f"PadData(note={self.note}, is_on={self.is_on}, velocity={self.velocity})"
+
+
+class PadLocation:
+    def __init__(self, channel: int, page: int, x: int, y: int):
+        self.channel = channel
+        self.page = page
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return f"PadLocation(channel={self.channel}, page={self.page}, x={self.x}, y={self.y})"
 
 
 # FIXME: This class holds duplicate state which causes all kinds of evils
@@ -68,12 +88,25 @@ class Page:
                     return x, y
         return None, None
 
-    def toggle_pad_by_note(self, note, color=22):
+    def get_velocity_for_pad_number(self, pad_number):
+        return self.note_map[pad_number].velocity
+
+    def toggle_pad_by_note(self, note):
         if self._debug:
             print(f'{self} -> toggle_pad_by_note', note)
         x, y = self.get_coords_from_note(note)
         if not x is None and not y is None:
-            self._set_pad(x, y, PadData(note, not self.pads[x][y].is_on, color=color))
+            self._set_pad(x, y, PadData(
+                note, not self.pads[x][y].is_on))
+        self.notify_update()
+        if not x is None and not y is None:
+            return PadLocation(self.channel, self.number, x, y)
+        else:
+            return None
+
+    def set_velocity(self, x: int, y: int, velocity: int):
+        self.pads[x][y].velocity = velocity
+        self.note_map[self.pads[x][y].note].velocity = velocity
         self.notify_update()
 
     def get_pads_in_column(self, x: int) -> List[PadData | None]:

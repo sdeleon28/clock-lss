@@ -15,12 +15,13 @@ CLOCKS_PER_EIGHTH = 12
 
 
 class QueueMessage:
-    def __init__(self, channel, note):
+    def __init__(self, channel, note, velocity):
         self.channel = channel
         self.note = note
+        self.velocity = velocity
 
     def __copy__(self):
-        return QueueMessage(self.channel, self.note)
+        return QueueMessage(self.channel, self.note, self.velocity)
 
 
 class Param:
@@ -155,7 +156,8 @@ class Channel(Page.Listener):
                 2: 6,
                 3: 3,
             }
-            self._position = math.floor(self._num_clocks / rates_to_step_sizes[self._rate])
+            self._position = math.floor(
+                self._num_clocks / rates_to_step_sizes[self._rate])
             self._num_clocks += 1
             self._running = True
         elif msg.type == 'songpos':
@@ -253,20 +255,20 @@ class Channel(Page.Listener):
         # FIXME: Refactor so the QueueMessage doesn't need to capture channel anymore
         # (separate queues per channel now)
         self.midi_outport.send(mido.Message(
-            "note_on", channel=message.channel, note=message.note))
+            "note_on", channel=message.channel, note=message.note, velocity=message.velocity))
         await asyncio.sleep(length)
         self.midi_outport.send(mido.Message(
-            "note_off", channel=message.channel, note=message.note))
+            "note_off", channel=message.channel, note=message.note, velocity=message.velocity))
 
     async def send_notes(self, messages: list[QueueMessage], length=0.1) -> None:
         """Send note to virtual MiDI device"""
         for message in messages:
             self.midi_outport.send(mido.Message(
-                "note_on", channel=message.channel, note=message.note))
+                "note_on", channel=message.channel, note=message.note, velocity=message.velocity))
         await asyncio.sleep(length)
         for message in messages:
             self.midi_outport.send(mido.Message(
-                "note_off", channel=message.channel, note=message.note))
+                "note_off", channel=message.channel, note=message.note, velocity=message.velocity))
 
     async def run(self):
         async for column in self.column_iterator():
@@ -282,7 +284,9 @@ class Channel(Page.Listener):
                     keys_in_octaves += [shift_octaves(key, octaves)
                                         for key in keys]
                 out_note = keys_in_octaves[index_to_pick]
-                self._queue_message(QueueMessage(self.number, out_note))
+                velocity = self.get_current_page().get_velocity_for_pad_number(pad_number)
+                self._queue_message(QueueMessage(
+                    self.number, out_note, velocity))
 
     async def _process_column(self, column: int):
         self.set_page(get_page_for_tick(column))

@@ -75,7 +75,7 @@
         [ ] Red light -> About to start
         [ ] Lights off -> Muted
     [ ] Stop on next bar
-[-] Bug: Cannot edit anymore after seq runs for a bit
+[X] Bug: Cannot edit anymore after seq runs for a bit
 [ ] Receive harmony and drumkit on different channels
     [ ] Drumkit channel could be smart enough to always have all the notes on
 [ ] Save / load state to / from file
@@ -88,13 +88,17 @@
     [ ] Program reads as much time as 8 steps
         [ ] Probably too hard to figure out the rate
 
-## Current sidequest: Velocity + feedback
+## Velocity + feedback
 
-[-] Commit stuff about colors
-[ ] Store last modified pad
-[ ] Connect CC message from knob (0, 0) to velocity of last pad
-[ ] Make the UI use this code:
+[X] Commit stuff about colors
+[X] Store last modified pad
+[X] Connect CC message from knob (0, 0) to velocity of last pad
+[X] Calculate color based off velocity
+[X] Send stored velocity in MIDI out
 
-        GREEN = [24, 20, 25, 26, 21, 22]
-        def get_green_index(velocity: int):
-            return int((velocity / 127) * (len(GREEN) - 1))
+## Legato
+
+[-] Implement ability to highlight a Launchpad row
+[ ] Detect CC message from encoder button
+[ ] Highlight launchpad row of last touched note on encoder button press
+[ ] Can't leave legato mode until end note is sent

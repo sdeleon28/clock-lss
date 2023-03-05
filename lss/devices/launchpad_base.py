@@ -6,7 +6,6 @@ from lss.pad import Pad
 from lss.utils import open_input, open_output, Color
 from .launchpad_layout import LaunchpadLayout
 from ..page import Page
-from lss.devices.launchpad_colours import Color as C
 
 
 class BaseLaunchpad:
