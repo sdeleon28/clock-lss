@@ -9,6 +9,9 @@ from lss.devices.launchpad_layout import LaunchpadLayout
 
 # TODO: Move this into a config file (that is shared across features, see PARAMS constant in lss/channel.py)
 VELOCITY_CC = 12
+VELOCITY_CHANNEL = 0
+LEGATO_CC = 12
+LEGATO_CHANNEL = 1
 
 
 class Sequencer(ChannelsManager.Listener):
@@ -31,6 +34,7 @@ class Sequencer(ChannelsManager.Listener):
         self.channels_manager.add_listener(self)
         self.launchpad.set_page(self.channels_manager.get_current_page())
         self.last_pad_location: PadLocation | None = None
+        self.legato_on = False
 
     def on_channel_or_page_changed(self, channel: int, page: int):
         self.launchpad.reset_all_pads()
@@ -59,9 +63,11 @@ class Sequencer(ChannelsManager.Listener):
         self.launchpad.reset_all_pads()
 
     async def _process_controller_message(self, msg) -> None:
-        if msg.control == VELOCITY_CC and self.last_pad_location:
+        if msg.control == VELOCITY_CC and msg.channel == VELOCITY_CHANNEL and self.last_pad_location:
             self.channels_manager.set_velocity(
                 self.last_pad_location, msg.value)
+        if msg.control == LEGATO_CC and msg.channel == LEGATO_CHANNEL and msg.value != 0:
+            self.legato_on = not self.legato_on
         await self.channels_manager.process_controller_message(msg)
 
     def _process_control_message(self, msg: ControlMessage) -> None:
@@ -138,7 +144,7 @@ class Sequencer(ChannelsManager.Listener):
             current_page = self.channels_manager.get_current_page()
             self.last_pad_location = current_page.toggle_pad_by_note(msg.note)
             self.launchpad.highlighted_row = 7 - \
-                self.last_pad_location.y if self.last_pad_location else None
+                self.last_pad_location.y if self.legato_on and self.last_pad_location else None
             # TODO: I'm calling this twice here
             self.launchpad.set_page(current_page)
             self.launchpad.init_controller_param(VELOCITY_CC, 127)
