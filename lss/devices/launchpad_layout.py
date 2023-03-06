@@ -79,7 +79,7 @@ class LaunchpadLayout:
                             self.channel5,
                             self.channel6,
                             self.channel7]
-    
+
     def is_menu_pad(self, pad):
         return pad in self.top_row
 

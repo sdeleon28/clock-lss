@@ -137,6 +137,10 @@ class Sequencer(ChannelsManager.Listener):
         else:
             current_page = self.channels_manager.get_current_page()
             self.last_pad_location = current_page.toggle_pad_by_note(msg.note)
+            self.launchpad.highlighted_row = 7 - \
+                self.last_pad_location.y if self.last_pad_location else None
+            # TODO: I'm calling this twice here
+            self.launchpad.set_page(current_page)
             self.launchpad.init_controller_param(VELOCITY_CC, 127)
 
     async def _process_msg(self, msg) -> None:

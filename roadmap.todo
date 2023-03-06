@@ -98,7 +98,7 @@
 
 ## Legato
 
-[-] Implement ability to highlight a Launchpad row
+[X] Implement ability to highlight a Launchpad row
 [ ] Detect CC message from encoder button
 [ ] Highlight launchpad row of last touched note on encoder button press
 [ ] Can't leave legato mode until end note is sent

@@ -99,7 +99,7 @@ class Page:
             self._set_pad(x, y, PadData(
                 note, not self.pads[x][y].is_on))
         self.notify_update()
-        if not x is None and not y is None:
+        if not x is None and not y is None and self.pads[x][y].is_on:
             return PadLocation(self.channel, self.number, x, y)
         else:
             return None

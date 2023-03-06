@@ -26,6 +26,7 @@ class BaseLaunchpad:
         self.reset_all_pads()
         self.set_channel_number(0)
         self.set_page_number(0)
+        self.highlighted_row = None
 
     def hand_shake(self):
         raise NotImplementedError()
@@ -51,8 +52,15 @@ class BaseLaunchpad:
 
     # TODO: This should be a DTO
     def set_page(self, page: Page):
-        notes_on = len(list(filter(lambda x: x.is_on, page.note_map.values())))
         page_column_count, page_row_count = 8, 8
+        for x in range(page_column_count):
+            for y in range(page_row_count):
+                pad_data = page.pads[x][y]
+                pad = Pad(x, y, launchpad=self)
+                self.off(pad_data.note)
+                pad.off()
+        if self.highlighted_row is not None:
+            self._highlight_row(self.highlighted_row)
         for x in range(page_column_count):
             for y in range(page_row_count):
                 pad_data = page.pads[x][y]
@@ -60,9 +68,6 @@ class BaseLaunchpad:
                 if pad_data.is_on:
                     self.on(pad_data.note, pad_data.color)
                     pad.on()
-                else:
-                    self.off(pad_data.note)
-                    pad.off()
                 self.pads[pad_data.note] = pad
 
     def blink_pads(self, pads):
@@ -112,6 +117,12 @@ class BaseLaunchpad:
 
     def get_pending_controller_messages(self):
         return self._controller_inport.iter_pending()
+
+    def _highlight_row(self, rownum):
+        rows = self.layout.rows
+        row = rows[rownum]
+        for note in row:
+            self.on(note, Color.PINK)
 
     def _reset_channels(self):
         self.off(self.layout.channel0)
