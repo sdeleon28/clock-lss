@@ -119,6 +119,8 @@ class Sequencer(ChannelsManager.Listener):
             self.channels_manager.set_page(3)
 
     def _process_channel_pad(self, pad):
+        if self.channels_manager.legato_started:
+            return
         if pad == self.launchpad_layout.channel0:
             self.channels_manager.set_channel(0)
         if pad == self.launchpad_layout.channel1:
@@ -142,14 +144,15 @@ class Sequencer(ChannelsManager.Listener):
         if self.launchpad_layout.is_channel_pad(msg.note):
             self._process_channel_pad(msg.note)
         else:
-            self.last_pad_location = self.channels_manager.toggle_pad_by_note(
-                msg.note)
-            self.launchpad.highlighted_row = 7 - \
-                self.last_pad_location.y if self.legato_on and self.last_pad_location else None
-            current_page = self.channels_manager.get_current_page()
-            # TODO: I'm calling this twice here
-            self.launchpad.set_page(current_page)
-            self.launchpad.init_controller_param(VELOCITY_CC, 127)
+            location_or_other_stuff = self.channels_manager.toggle_pad_by_note( msg.note)
+            if location_or_other_stuff != 'not-changed':
+                self.last_pad_location = location_or_other_stuff
+                self.launchpad.highlighted_row = 7 - \
+                    self.last_pad_location.y if self.legato_on and self.last_pad_location else None
+                current_page = self.channels_manager.get_current_page()
+                # TODO: I'm calling this twice here
+                self.launchpad.set_page(current_page)
+                self.launchpad.init_controller_param(VELOCITY_CC, 127)
 
     async def _process_msg(self, msg) -> None:
         if self._debug:

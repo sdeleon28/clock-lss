@@ -24,6 +24,10 @@ class ChannelsManager(Channel.Listener):
         for channel in self.channels:
             channel.legato_on = value
 
+    @property
+    def legato_started(self):
+        return self.channels[self.current_channel].legato_started
+
     def add_listener(self, listener):
         self.listeners = self.listeners | {listener}
 

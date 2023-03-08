@@ -94,7 +94,7 @@ class Channel(Page.Listener):
     @legato_on.setter
     def legato_on(self, value: bool):
         if not self._legato_on and value:
-            self._legato_started = False
+            self.legato_started = False
         self._legato_on = value
         for page in self.pages:
             page.legato_on = value
@@ -103,20 +103,26 @@ class Channel(Page.Listener):
         current_page = self.get_current_page()
         x, y = self.get_current_page().get_coords_from_note(note)
         if x is not None and y is not None and self.legato_on:
-            if self._legato_started:
+            if self.legato_started:
+                # we must be in the same row
+                if y != self._legato_y:
+                    return 'not-changed'
                 current_page.set_pad(x, y, PadData(
                     note,
                     not (current_page.pads[x][y] is not None and current_page.pads[x][y].is_on),
                     127,
                     NoteType.NOTE_OFF))
-                self._legato_started = False
+                self.legato_started = False
             else:
                 current_page.set_pad(x, y, PadData(
                     note, not current_page.pads[x][y].is_on, 127, NoteType.NOTE_ON))
-                self._legato_started = True
+                self.legato_started = True
+                self._legato_y = y
                 return PadLocation(current_page.channel.number, current_page.number, x, y)
-        else:
+        elif not self.legato_started:
             return self.get_current_page().toggle_pad_by_note(note)
+        else:
+            return 'not-changed'
 
     def add_listener(self, listener: Listener):
         self.listeners = self.listeners | {listener}
@@ -134,7 +140,7 @@ class Channel(Page.Listener):
 
         self.listeners: set[Channel.Listener] = set([])
         self._legato_on = False
-        self._legato_started = False
+        self.legato_started = False
 
         self.number = number
         self.pages: list[Page] = []
