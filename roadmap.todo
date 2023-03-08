@@ -101,4 +101,14 @@
 [X] Implement ability to highlight a Launchpad row
 [X] Detect CC message from encoder button
 [X] Highlight launchpad row of last touched note on encoder button press
-[ ] Can't leave legato mode until end note is sent
+[-] Can't leave legato mode until end note is sent
+    [-] Can't edit other rows
+[ ] NOTE_ON behaviour
+    [ ] Should do the same as current notes, without waiting or sending note off
+    [ ] If you disable legato while there's a NOTE_ON witout a NOTE_OFF, it should undo itself
+        [ ] if self.last_position is NOTE_ON, toggle self.last_position off
+[ ] NOTE_OFF behaviour
+    [ ] Gate control should determine when the note_off event is sent
+[ ] Paint bridge pads
+[ ] Tap on legato note_on, bridge or note_off destroys the whole legato note
+    [ ] _legato_started must be off after this action

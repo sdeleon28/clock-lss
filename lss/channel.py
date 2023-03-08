@@ -1,6 +1,9 @@
 from copy import copy
+from lss.notetype import NoteType
 
-from .page import Page
+from lss.paddata import PadData
+
+from .page import PadLocation, Page
 from lss.midi import ControlMessage, NoteMessage, ClockMessage
 from lss.clock_math import get_page_for_tick, get_page_position_for_tick
 from lss.devices.launchpad_layout import LaunchpadLayout
@@ -84,6 +87,37 @@ class Channel(Page.Listener):
         def on_page_changed(self, pagenum: int):
             raise NotImplementedError
 
+    @property
+    def legato_on(self):
+        return self._legato_on
+
+    @legato_on.setter
+    def legato_on(self, value: bool):
+        if not self._legato_on and value:
+            self._legato_started = False
+        self._legato_on = value
+        for page in self.pages:
+            page.legato_on = value
+
+    def toggle_pad_by_note(self, note: int):
+        current_page = self.get_current_page()
+        x, y = self.get_current_page().get_coords_from_note(note)
+        if x is not None and y is not None and self.legato_on:
+            if self._legato_started:
+                current_page.set_pad(x, y, PadData(
+                    note,
+                    not (current_page.pads[x][y] is not None and current_page.pads[x][y].is_on),
+                    127,
+                    NoteType.NOTE_OFF))
+                self._legato_started = False
+            else:
+                current_page.set_pad(x, y, PadData(
+                    note, not current_page.pads[x][y].is_on, 127, NoteType.NOTE_ON))
+                self._legato_started = True
+                return PadLocation(current_page.channel.number, current_page.number, x, y)
+        else:
+            return self.get_current_page().toggle_pad_by_note(note)
+
     def add_listener(self, listener: Listener):
         self.listeners = self.listeners | {listener}
 
@@ -99,11 +133,13 @@ class Channel(Page.Listener):
         self.launchpad_layout = LaunchpadLayout()
 
         self.listeners: set[Channel.Listener] = set([])
+        self._legato_on = False
+        self._legato_started = False
 
         self.number = number
         self.pages: list[Page] = []
         for i in range(PAGES):
-            page = Page(self.number, i)
+            page = Page(self, i)
             page.add_listener(self)
             self.pages.append(page)
         self.current_page = 0

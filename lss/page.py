@@ -2,29 +2,8 @@ from typing import List
 from abc import ABC
 from copy import copy
 
-
-def _get_color_intensity_for_velocity(colors: list[int], velocity: int):
-    return int((velocity / 127) * (len(colors) - 1))
-
-def get_color_for_velocity(colors: list[int], velocity: int):
-    return colors[_get_color_intensity_for_velocity(colors, velocity)]
-
-class PadData:
-    def __init__(self, note, is_on, velocity=127):
-        self.note = note
-        self.is_on = is_on
-        self.velocity = velocity
-
-    def __copy__(self):
-        return PadData(self.note, self.is_on, self.velocity)
-
-    @property
-    def color(self):
-        from lss.devices.launchpad_colours import Color
-        return get_color_for_velocity(Color.GREEN, self.velocity)
-
-    def __str__(self):
-        return f"PadData(note={self.note}, is_on={self.is_on}, velocity={self.velocity})"
+from lss.notetype import NoteType
+from lss.paddata import PadData
 
 
 class PadLocation:
@@ -44,11 +23,20 @@ class Page:
         def on_page_updated(self, page: "Page"):
             raise NotImplementedError
 
+    @property
+    def legato_on(self):
+        return self._legato_on
+
+    @legato_on.setter
+    def legato_on(self, value: bool):
+        self._legato_on = value
+
     def __init__(self, channel, number):
         self._debug = False
         self.channel = channel
         self.number = number
         self.note_map: dict[int, PadData] = {}
+        self._legato_on = False
         page_column_count, page_row_count = 8, 8
         row = [PadData(i, False) for i in range(page_row_count)]
         self.pads = [row[:] for _ in range(page_column_count)]
@@ -76,7 +64,7 @@ class Page:
         for listener in self.listeners:
             listener.on_page_updated(self)
 
-    def _set_pad(self, x, y, padData: PadData):
+    def set_pad(self, x, y, padData: PadData):
         self.pads[x][y] = padData
         self.note_map[padData.note] = padData
         self.notify_update()
@@ -96,11 +84,14 @@ class Page:
             print(f'{self} -> toggle_pad_by_note', note)
         x, y = self.get_coords_from_note(note)
         if not x is None and not y is None:
-            self._set_pad(x, y, PadData(
-                note, not self.pads[x][y].is_on))
+            if self._legato_on:
+                pass
+            else:
+                self.set_pad(x, y, PadData(
+                    note, not self.pads[x][y].is_on, 127, NoteType.FULL))
         self.notify_update()
         if not x is None and not y is None and self.pads[x][y].is_on:
-            return PadLocation(self.channel, self.number, x, y)
+            return PadLocation(self.channel.number, self.number, x, y)
         else:
             return None
 

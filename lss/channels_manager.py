@@ -14,6 +14,16 @@ class ChannelsManager(Channel.Listener):
         def on_page_updated(self, page: Page):
             return NotImplementedError
 
+    @property
+    def legato_on(self):
+        return self._legato_on
+
+    @legato_on.setter
+    def legato_on(self, value: bool):
+        self._legato_on = value
+        for channel in self.channels:
+            channel.legato_on = value
+
     def add_listener(self, listener):
         self.listeners = self.listeners | {listener}
 
@@ -23,6 +33,7 @@ class ChannelsManager(Channel.Listener):
     def __init__(self, launchpad, midi_outport, debug):
         self._debug = debug
         self.launchpad = launchpad
+        self._legato_on = False
 
         self.listeners: set[ChannelsManager.Listener] = set([])
         self.channels: list[Channel] = []
@@ -91,6 +102,9 @@ class ChannelsManager(Channel.Listener):
     def copy_to_next_page(self):
         self._get_current_channel_object().copy_to_next_page()
         self._notify_channel_or_page_changed()
+
+    def toggle_pad_by_note(self, note: int):
+        return self.channels[self.current_channel].toggle_pad_by_note(note)
 
     async def process_controller_message(self, msg) -> None:
         for channel in self.channels:
