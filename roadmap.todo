@@ -104,10 +104,11 @@
 [X] Can't leave legato mode until end note is sent
     [X] Can't edit other rows
     [X] Can't change channels
-[ ] Colors
-    [ ] Paint bridge pads
-    [ ] Paint start note
-    [ ] Paint end note
+[X] Colors
+    [X] Paint bridge pads
+    [X] Paint start note
+    [X] Paint end note
+[X] Bug: Notes on (7 - y) row are toggle-disabled
 [ ] NOTE_ON behaviour
     [ ] Should do the same as current notes, without waiting or sending note off
     [ ] If you disable legato while there's a NOTE_ON witout a NOTE_OFF, it should undo itself

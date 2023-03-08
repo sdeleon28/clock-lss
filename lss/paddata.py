@@ -8,6 +8,7 @@ def _get_color_intensity_for_velocity(colors: list[int], velocity: int):
 def get_color_for_velocity(colors: list[int], velocity: int):
     return colors[_get_color_intensity_for_velocity(colors, velocity)]
 
+
 class PadData:
     def __init__(self, note, is_on, velocity=127, note_type=NoteType.FULL):
         self.note = note
@@ -21,8 +22,16 @@ class PadData:
     @property
     def color(self):
         from lss.devices.launchpad_colours import Color
-        return get_color_for_velocity(Color.GREEN, self.velocity)
+        if self.note_type == NoteType.NOTE_ON:
+            return get_color_for_velocity(Color.GREEN, self.velocity)
+        elif self.note_type == NoteType.NOTE_OFF:
+            return get_color_for_velocity(Color.BLUE_PURPLE, self.velocity)
+        elif self.note_type == NoteType.FULL:
+            return get_color_for_velocity(Color.GREEN, self.velocity)
+        elif self.note_type == NoteType.BRIDGE:
+            return get_color_for_velocity(Color.CYAN, self.velocity)
+        # RED means something went wrong
+        return get_color_for_velocity(Color.RED_ORANGE, 127)
 
     def __str__(self):
         return f"PadData(note={self.note}, is_on={self.is_on}, velocity={self.velocity}, note_type={self.note_type})"
-

@@ -99,6 +99,51 @@ class Channel(Page.Listener):
         for page in self.pages:
             page.legato_on = value
 
+    def _fill_range(self, start_location: PadLocation, end_location: PadLocation):
+        PAGE_COUNT = 4
+        COLUMNS_COUNT = 8
+        for page in range(PAGE_COUNT):
+            if start_location.page == end_location.page and end_location.x < start_location.x and page == start_location.page:
+                for x in range(0, end_location.x):
+                    self.pages[page].set_pad(x, start_location.y, PadData(
+                        self.launchpad_layout.get_note_from_coords(
+                            x, start_location.y),
+                        True,
+                        127,
+                        NoteType.BRIDGE))
+                for x in range(start_location.x, COLUMNS_COUNT):
+                    # FIXME: I seem to be using y values that count up, and y values that count down
+                    self.pages[page].set_pad(x, start_location.y, PadData(
+                        self.launchpad_layout.get_note_from_coords(
+                            x, start_location.y),
+                        True,
+                        127,
+                        NoteType.BRIDGE))
+            else:
+                start_x = 0
+                end_x = 7
+                if page == start_location.page:
+                    start_x = start_location.x
+                if page == end_location.page:
+                    end_x = end_location.x
+                for x in range(start_x, end_x + 1):
+                    # FIXME: I seem to be using y values that count up, and y values that count down
+                    self.pages[page].set_pad(x, start_location.y, PadData(
+                        self.launchpad_layout.get_note_from_coords(
+                            x, start_location.y),
+                        True,
+                        127,
+                        NoteType.BRIDGE))
+        self.pages[start_location.page].set_pad(start_location.x, start_location.y, PadData(
+            # FIXME: I seem to be using y values that count up, and y values that count down
+            self.launchpad_layout.get_note_from_coords(
+                start_location.x, start_location.y),
+            True, 127, NoteType.NOTE_ON))
+        self.pages[end_location.page].set_pad(end_location.x, end_location.y, PadData(
+            self.launchpad_layout.get_note_from_coords(
+                end_location.x, end_location.y),
+            True, 127, NoteType.NOTE_OFF))
+
     def toggle_pad_by_note(self, note: int):
         current_page = self.get_current_page()
         x, y = self.get_current_page().get_coords_from_note(note)
@@ -109,16 +154,23 @@ class Channel(Page.Listener):
                     return 'not-changed'
                 current_page.set_pad(x, y, PadData(
                     note,
-                    not (current_page.pads[x][y] is not None and current_page.pads[x][y].is_on),
+                    not (
+                        current_page.pads[x][y] is not None and current_page.pads[x][y].is_on),
                     127,
                     NoteType.NOTE_OFF))
+                end_location = PadLocation(
+                    current_page.channel.number, current_page.number, x, y)
+                self._fill_range(self._last_location, end_location)
                 self.legato_started = False
+                return None
             else:
                 current_page.set_pad(x, y, PadData(
                     note, not current_page.pads[x][y].is_on, 127, NoteType.NOTE_ON))
                 self.legato_started = True
                 self._legato_y = y
-                return PadLocation(current_page.channel.number, current_page.number, x, y)
+                self._last_location = PadLocation(
+                    current_page.channel.number, current_page.number, x, y)
+                return self._last_location
         elif not self.legato_started:
             return self.get_current_page().toggle_pad_by_note(note)
         else:

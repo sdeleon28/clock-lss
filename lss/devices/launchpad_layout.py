@@ -94,6 +94,12 @@ class LaunchpadLayout:
                 return reversed_column.index(pad)
         return 0
 
+    def get_note_from_coords(self, x, y):
+        # FIXME: Clearly, I'm storing the columns in a weird way
+        # (see reverse bullshit in pad_to_arp_index)
+        # That's what that 7 is about.
+        return self.rows[7 - y][x]
+
     def __str__(self):
         rows = [self.top_row] + self.rows
         columns = transpose(rows)
