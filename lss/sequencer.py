@@ -12,6 +12,8 @@ VELOCITY_CC = 12
 VELOCITY_CHANNEL = 0
 LEGATO_CC = 12
 LEGATO_CHANNEL = 1
+PRINT_CC = 8
+PRINT_CHANNEL = 1
 
 
 class Sequencer(ChannelsManager.Listener):
@@ -35,6 +37,7 @@ class Sequencer(ChannelsManager.Listener):
         self.launchpad.set_page(self.channels_manager.get_current_page())
         self.last_pad_location: PadLocation | None = None
         self.legato_on = False
+        self.print_mode_on = False
 
     def on_channel_or_page_changed(self, channel: int, page: int):
         self.launchpad.reset_all_pads()
@@ -63,6 +66,9 @@ class Sequencer(ChannelsManager.Listener):
         self.launchpad.reset_all_pads()
 
     async def _process_controller_message(self, msg) -> None:
+        if msg.control == PRINT_CC and msg.channel == PRINT_CHANNEL and msg.value != 0:
+            self.print_mode_on = not self.print_mode_on
+            return
         if msg.control == VELOCITY_CC and msg.channel == VELOCITY_CHANNEL and self.last_pad_location:
             self.channels_manager.set_velocity(
                 self.last_pad_location, msg.value)
@@ -141,10 +147,16 @@ class Sequencer(ChannelsManager.Listener):
     def _process_pad_message(self, msg: NoteMessage) -> None:
         if msg.velocity == 0:
             return
+        if self.print_mode_on:
+            print(
+                self.channels_manager.get_current_page().note_map[msg.note]
+            )
+            return
         if self.launchpad_layout.is_channel_pad(msg.note):
             self._process_channel_pad(msg.note)
         else:
-            location_or_other_stuff = self.channels_manager.toggle_pad_by_note( msg.note)
+            location_or_other_stuff = self.channels_manager.toggle_pad_by_note(
+                msg.note)
             if location_or_other_stuff != 'not-changed':
                 self.last_pad_location = location_or_other_stuff
                 self.launchpad.highlighted_row = 7 - \

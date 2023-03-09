@@ -109,12 +109,17 @@
     [X] Paint start note
     [X] Paint end note
 [X] Bug: Notes on (7 - y) row are toggle-disabled
-[ ] NOTE_ON behaviour
-    [ ] Should do the same as current notes, without waiting or sending note off
-    [ ] If you disable legato while there's a NOTE_ON witout a NOTE_OFF, it should undo itself
-        [ ] if self.last_position is NOTE_ON, toggle self.last_position off
-[ ] NOTE_OFF behaviour
-    [ ] Gate control should determine when the note_off event is sent
+[ ] Bug: Tapping on the same note again should be a special case
+    -> Expected: Should remove start note
+    -> Actual: Replaces with end note
+[ ] Bug: Velocity not working
+[ ] Bug: Encoders not working anymore
+[ ] Bug: Cursor not visible
+[-] NOTE_ON behaviour
+    [-] Should do the same as current notes, without waiting or sending note off
+[-] NOTE_OFF behaviour
+    [-] Gate control should determine when the note_off event is sent
+[ ] Disallow toggling legato off when waiting for end note
 [ ] Tap on legato note_on, bridge or note_off destroys the whole legato note
     [ ] _legato_started must be off after this action
 [ ] How should the velocity work?

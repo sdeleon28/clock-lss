@@ -18,13 +18,17 @@ CLOCKS_PER_EIGHTH = 12
 
 
 class QueueMessage:
-    def __init__(self, channel, note, velocity):
+    def __init__(self, channel, note, note_type, velocity):
         self.channel = channel
         self.note = note
+        self.note_type = note_type
         self.velocity = velocity
 
     def __copy__(self):
-        return QueueMessage(self.channel, self.note, self.velocity)
+        return QueueMessage(self.channel, self.note, self.note_type, self.velocity)
+
+    def __str__(self):
+        return f"QueueMessage(channel={self.channel}, note={self.note}, note_type={self.note_type}, velocity={self.velocity})"
 
 
 class Param:
@@ -112,7 +116,6 @@ class Channel(Page.Listener):
                         127,
                         NoteType.BRIDGE))
                 for x in range(start_location.x, COLUMNS_COUNT):
-                    # FIXME: I seem to be using y values that count up, and y values that count down
                     self.pages[page].set_pad(x, start_location.y, PadData(
                         self.launchpad_layout.get_note_from_coords(
                             x, start_location.y),
@@ -354,13 +357,40 @@ class Channel(Page.Listener):
         self.midi_outport.send(mido.Message(
             "note_off", channel=message.channel, note=message.note, velocity=message.velocity))
 
+    def send_note_start(self, message: QueueMessage) -> None:
+        self.midi_outport.send(mido.Message(
+            "note_on", channel=message.channel, note=message.note, velocity=message.velocity))
+
+    async def send_note_end(self, message: QueueMessage, length=0.1) -> None:
+        await asyncio.sleep(length)
+        self.midi_outport.send(mido.Message(
+            "note_on", channel=message.channel, note=message.note, velocity=message.velocity))
+
     async def send_notes(self, messages: list[QueueMessage], length=0.1) -> None:
+        start_notes = [
+            message for message in messages if message.note_type == NoteType.NOTE_ON]
+        end_notes = [
+            message for message in messages if message.note_type == NoteType.NOTE_OFF]
+        full_notes = [
+            message for message in messages if message.note_type == NoteType.FULL]
+        for message in start_notes:
+            self.send_note_start(message)
+        asyncio.gather(self._do_send_end_notes(end_notes, length),
+                       self._do_send_full_notes(full_notes, length))
+
+    async def _do_send_end_notes(self, end_notes, length):
+        await asyncio.sleep(length)
+        for message in end_notes:
+            self.midi_outport.send(mido.Message(
+                "note_off", channel=message.channel, note=message.note, velocity=message.velocity))
+
+    async def _do_send_full_notes(self, full_notes, length):
         """Send note to virtual MiDI device"""
-        for message in messages:
+        for message in full_notes:
             self.midi_outport.send(mido.Message(
                 "note_on", channel=message.channel, note=message.note, velocity=message.velocity))
         await asyncio.sleep(length)
-        for message in messages:
+        for message in full_notes:
             self.midi_outport.send(mido.Message(
                 "note_off", channel=message.channel, note=message.note, velocity=message.velocity))
 
@@ -378,9 +408,14 @@ class Channel(Page.Listener):
                     keys_in_octaves += [shift_octaves(key, octaves)
                                         for key in keys]
                 out_note = keys_in_octaves[index_to_pick]
-                velocity = self.get_current_page().get_velocity_for_pad_number(pad_number)
-                self._queue_message(QueueMessage(
-                    self.number, out_note, velocity))
+                current_page = self.get_current_page()
+                velocity = current_page.get_velocity_for_pad_number(pad_number)
+                x, y = current_page.get_coords_from_note(pad_number)
+                if x is not None and y is not None:
+                    note_type = current_page.pads[x][y].note_type if current_page.pads[x][y] else None
+                    if note_type is not None:
+                        self._queue_message(QueueMessage(
+                            self.number, out_note, note_type, velocity))
 
     async def _process_column(self, column: int):
         self.set_page(get_page_for_tick(column))
