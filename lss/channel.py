@@ -186,7 +186,6 @@ class Channel(Page.Listener):
         self.listeners = self.listeners - {listener}
 
     def __init__(self, number, launchpad, midi_outport, debug):
-        self._debug = debug
         self._done = False
         self.is_active = False
         self.midi_outport = midi_outport
@@ -317,15 +316,16 @@ class Channel(Page.Listener):
             print(f"Processing incoming CONTROLLER message: {msg}")
 
         if self.is_active and ControlMessage.is_control(msg):
-            if msg.control in map(lambda p: p.control, PARAMS):
+            control_values = map(lambda p: p.control, PARAMS)
+            if msg.control in control_values:
                 param = list(
                     filter(lambda p: p.control == msg.control, PARAMS))[0]
-                octave_value = get_value_from_proportion(control_message_to_proportion(msg.value),
+                value = get_value_from_proportion(control_message_to_proportion(msg.value),
                                                          param.min_value,
                                                          param.max_value)
-                _snapped_octave_index, snapped_octave_value = snap(
-                    octave_value, range(param.min_value, param.max_value + 1))
-                setattr(self, param.attribute_name, snapped_octave_value)
+                _snapped_index, snapped_value = snap(
+                    value, range(param.min_value, param.max_value + 1))
+                setattr(self, param.attribute_name, snapped_value)
 
     def _queue_message(self, msg: QueueMessage):
         self._queued_messages.append(msg)

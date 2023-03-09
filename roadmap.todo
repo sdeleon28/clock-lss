@@ -108,18 +108,22 @@
     [X] Paint bridge pads
     [X] Paint start note
     [X] Paint end note
+[X] NOTE_ON behaviour
+    [X] Should do the same as current notes, without waiting or sending note off
+[X] NOTE_OFF behaviour
+    [X] Gate control should determine when the note_off event is sent
 [X] Bug: Notes on (7 - y) row are toggle-disabled
+[X] Bug: Encoders not working anymore
+[X] Bug: Cursor not visible
 [ ] Bug: Tapping on the same note again should be a special case
     -> Expected: Should remove start note
     -> Actual: Replaces with end note
 [ ] Bug: Velocity not working
-[ ] Bug: Encoders not working anymore
-[ ] Bug: Cursor not visible
-[-] NOTE_ON behaviour
-    [-] Should do the same as current notes, without waiting or sending note off
-[-] NOTE_OFF behaviour
-    [-] Gate control should determine when the note_off event is sent
+[ ] Bug: Clean up legato row guide on note end
 [ ] Disallow toggling legato off when waiting for end note
 [ ] Tap on legato note_on, bridge or note_off destroys the whole legato note
     [ ] _legato_started must be off after this action
-[ ] How should the velocity work?
+[ ] Legato velocity should affect all pads in legato note
+    [ ] Velocity of note_on
+    [ ] Velocity of note_off
+    [ ] Velocity of bridge

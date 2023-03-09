@@ -45,7 +45,7 @@ class ChannelsManager(Channel.Listener):
             channel = Channel(i, launchpad, midi_outport, debug)
             channel.add_listener(self)
             self.channels.append(channel)
-        self.current_channel = 0
+        self.set_channel(0)
 
     def close(self):
         for channel in self.channels:
