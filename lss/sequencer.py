@@ -69,6 +69,9 @@ class Sequencer(ChannelsManager.Listener):
         if msg.control == PRINT_CC and msg.channel == PRINT_CHANNEL and msg.value != 0:
             self.print_mode_on = not self.print_mode_on
             return
+        if self.print_mode_on:
+            print(f"Controller message: {msg}")
+            return
         if msg.control == VELOCITY_CC and msg.channel == VELOCITY_CHANNEL and self.last_pad_location:
             self.channels_manager.set_velocity(
                 self.last_pad_location, msg.value)
